@@ -1,0 +1,78 @@
+// Prisma schema for Chatbot project
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+model User {
+  uid                    String         @id @default(uuid())
+  email                  String         @unique
+  name                   String
+  password_hash          String
+  role                   String
+  contact_number         String?
+  created_at             DateTime       @default(now())
+  updated_at             DateTime       @updatedAt
+  is_active              Boolean        @default(true)
+  failed_login_attempts  Int            @default(0)
+  locked_until           DateTime?
+  refresh_tokens         RefreshToken[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  uid        String   @id @default(uuid())
+  user_uid   String
+  token_hash String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_uid], references: [uid], onDelete: Cascade)
+
+  @@index([user_uid])
+}
+
+model Role {
+  uid                String   @id @default(uuid())
+  role_name          String   @unique
+  can_view_all_chats Boolean  @default(false)
+  can_download       Boolean  @default(false)
+  can_manage_users   Boolean  @default(false)
+  created_at         DateTime @default(now())
+}
+
+model ChatBot {
+  session_id     String   @id @default(uuid())
+  name           String?
+  email          String?
+  chat_language  String?
+  interested_in  String?
+  lead_generated Boolean  @default(false)
+  created_at     DateTime @default(now())
+  expires_at     DateTime
+  chats          Chat[]
+
+  @@index([email])
+  @@index([created_at])
+  @@index([lead_generated])
+  @@index([chat_language])
+}
+
+model Chat {
+  id            Int      @id @default(autoincrement())
+  session_id    String
+  response_type String
+  message_text  String   @db.Text
+  timestamp     DateTime @default(now())
+  token_count   Int?
+  is_visible    Boolean  @default(true)
+
+  chatbot ChatBot @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@index([session_id, timestamp])
+}

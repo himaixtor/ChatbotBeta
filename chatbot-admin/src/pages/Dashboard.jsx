@@ -1,0 +1,68 @@
+import { useQuery } from '@tanstack/react-query';
+import api from '../utils/api';
+import LanguagePie from '../components/LanguagePie';
+import DailyActivityChart from '../components/DailyActivityChart';
+
+export default function Dashboard() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
+      const { data: stats } = await api.get('/api/admin/stats');
+      return stats;
+    },
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  const leadPct =
+    data?.total_chats > 0
+      ? ((data.leads_generated / data.total_chats) * 100).toFixed(1)
+      : '0';
+
+  if (isLoading) {
+    return (
+      <>
+        <h1 className="page-title">Dashboard</h1>
+        <div className="card-grid">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="stat-card">
+              <div className="skeleton" style={{ height: 40, marginBottom: 8 }} />
+              <div className="skeleton" style={{ height: 16, width: '60%' }} />
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <h1 className="page-title">Dashboard</h1>
+      <div className="card-grid">
+        <div className="stat-card">
+          <div className="value">{data?.total_chats ?? 0}</div>
+          <div className="label">Total conversations</div>
+        </div>
+        <div className="stat-card">
+          <div className="value">{data?.leads_generated ?? 0}</div>
+          <div className="label">Leads captured ({leadPct}%)</div>
+        </div>
+        <div className="stat-card">
+          <div className="label" style={{ marginBottom: 8 }}>
+            Language breakdown (chats)
+          </div>
+          <LanguagePie data={data?.language_breakdown} />
+        </div>
+        <div className="stat-card">
+          <div className="label" style={{ marginBottom: 8 }}>
+            Users by language (unique emails)
+          </div>
+          <LanguagePie data={data?.users_by_language} />
+        </div>
+      </div>
+      <div className="chart-card">
+        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>Daily activity (last 30 days)</h2>
+        <DailyActivityChart dailyStats={data?.daily_stats} />
+      </div>
+    </>
+  );
+}
