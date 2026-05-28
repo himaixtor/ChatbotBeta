@@ -28,24 +28,45 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
-app.use(
-  cors({
-    // Widget might run from file:// / null origin; allow it.
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'content-type',
-      'Authorization',
-    ],
-    preflightContinue: true,
-    optionsSuccessStatus: 204,
-  })
-);
 
-// Explicitly handle CORS preflight for all routes
-app.options('*', cors());
+const corsOptionsDelegate = (req, callback) => {
+  const origin = req.header('Origin');
+  let corsOptions = {
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'content-type', 'Authorization'],
+    preflightContinue: false, // Handle CORS preflight in this middleware and end response
+    optionsSuccessStatus: 204,
+  };
+
+  // 1. If no Origin (server-to-server, curl, Postman)
+  if (!origin) {
+    corsOptions.origin = true;
+    corsOptions.credentials = true;
+  }
+  // 2. If 'null' Origin (local file:// testing in widget-test/index.html)
+  // Browsers reject Access-Control-Allow-Origin: null (or *) if Access-Control-Allow-Credentials is true.
+  // Hence, credentials MUST be set to false and origin set to '*' to pass browser policies.
+  else if (origin === 'null') {
+    corsOptions.origin = '*';
+    corsOptions.credentials = false;
+  }
+  // 3. If dynamic localhost/127.0.0.1 (development admin panel or widgets)
+  else if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+    corsOptions.origin = origin;
+    corsOptions.credentials = true;
+  }
+  // 4. If explicit production domains configured in .env
+  else {
+    const allowed = corsOrigins.includes(origin);
+    corsOptions.origin = allowed ? origin : false;
+    corsOptions.credentials = allowed;
+  }
+
+  callback(null, corsOptions);
+};
+
+app.use(cors(corsOptionsDelegate));
+
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());

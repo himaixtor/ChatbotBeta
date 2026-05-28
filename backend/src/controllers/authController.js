@@ -92,7 +92,18 @@ async function login(req, res, next) {
       });
     }
 
+console.log('[auth/login] user found', {
+      uid: user.uid,
+      email: user.email,
+      is_active: user.is_active,
+      locked_until: user.locked_until,
+      failed_login_attempts: user.failed_login_attempts,
+      role: user.role,
+    });
+
     const valid = await bcrypt.compare(password, user.password_hash);
+    console.log('[auth/login] password match?', valid);
+
     if (!valid) {
       const attempts = user.failed_login_attempts + 1;
       const updateData = { failed_login_attempts: attempts };

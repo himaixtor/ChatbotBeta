@@ -44,7 +44,7 @@ async function sendMessage(req, res, next) {
       content: c.message_text,
     }));
 
-    const aiResult = await callAIApi(session_id, messages);
+    const aiResult = await callAIApi(session_id, message, messages);
 
     await prisma.chat.create({
       data: {

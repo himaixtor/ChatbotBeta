@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireRole('admin', 'manager', 'viewer'));
 
+
 router.get('/chats', adminController.listChats);
 router.get('/stats', adminController.getStats);
 router.get(
