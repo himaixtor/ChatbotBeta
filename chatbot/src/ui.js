@@ -9,6 +9,7 @@ export function createUI(shadow, config) {
   root.innerHTML = `
     <div class="panel" id="panel">
       <div class="panel-header">
+        <span class="bot-avatar">A</span>
         <span id="bot-title"></span>
         <button type="button" class="close-btn" id="close-btn" aria-label="Close">×</button>
       </div>
@@ -22,7 +23,9 @@ export function createUI(shadow, config) {
         <button type="button" class="send-btn" id="send-btn">Send</button>
       </div>
     </div>
-    <button type="button" class="bubble" id="bubble" aria-label="Open chat">💬</button>
+    <button type="button" class="bubble" id="bubble" aria-label="Open chat">
+      <span>A</span>
+    </button>
   `;
 
   shadow.appendChild(root);

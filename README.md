@@ -18,6 +18,25 @@ Full-stack chatbot system with an embeddable widget, admin portal, and Node.js A
 
 ## Quick Start
 
+### Run everything from the main folder
+
+From `D:\Projects\ChatBot` or the project root on your server:
+
+```bash
+npm run dev
+```
+
+This starts backend, chatbot widget watch build, admin portal, and widget test as detached background processes. They keep running even if the PuTTY session closes.
+
+Useful commands:
+
+```bash
+npm run status
+npm run kill
+```
+
+Logs are written under `.runtime/logs/`.
+
 ### 1. Database
 
 ```bash

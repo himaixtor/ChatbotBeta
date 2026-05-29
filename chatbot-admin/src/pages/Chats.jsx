@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Eye, Download, Copy, Trash2 } from 'lucide-react';
+import { Copy, Download, Eye, Search, Trash2 } from 'lucide-react';
 import api from '../utils/api';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../hooks/useAuth';
@@ -18,6 +18,10 @@ const LANG_COLORS = {
 
 function canDownload(role) {
   return role === 'admin' || role === 'manager';
+}
+
+function hasDownloadAccess(user) {
+  return user?.permissions?.can_download || canDownload(user?.role);
 }
 
 function canDelete(role) {
@@ -122,25 +126,20 @@ export default function Chats() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <h1 className="page-title" style={{ margin: 0 }}>
-          Chat History
-        </h1>
-        {canDownload(user?.role) && (
-          <button type="button" className="btn btn-primary" style={{ width: 'auto' }} onClick={downloadAll}>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Conversation intelligence</p>
+          <h1 className="page-title">Chat History</h1>
+        </div>
+        {hasDownloadAccess(user) && (
+          <button type="button" className="btn btn-primary action-btn" style={{ width: 'auto' }} onClick={downloadAll}>
+            <Download size={18} />
             Download All
           </button>
         )}
       </div>
 
       <div className="toolbar">
-        <input
-          type="search"
-          placeholder="Search name, email, session…"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          style={{ minWidth: 220 }}
-        />
         <select
           value={language}
           onChange={(e) => updateParams({ language: e.target.value, page: 1 })}
@@ -168,6 +167,15 @@ export default function Chats() {
           value={date_to}
           onChange={(e) => updateParams({ date_to: e.target.value, page: 1 })}
         />
+        <label className="search-box">
+          <Search size={17} />
+          <input
+            type="search"
+            placeholder="Search name, email, session..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </label>
       </div>
 
       <div className="table-wrap">
@@ -239,7 +247,7 @@ export default function Chats() {
                     >
                       <Eye size={18} />
                     </button>
-                    {canDownload(user?.role) && (
+                    {hasDownloadAccess(user) && (
                       <button
                         type="button"
                         className="btn-icon"
