@@ -14,6 +14,7 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const roleRoutes = require('./routes/roleRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -80,6 +81,7 @@ app.use('/api/session', sessionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/users', userRoutes);
 
 app.use(errorHandler);
 

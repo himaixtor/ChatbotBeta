@@ -1,3 +1,4 @@
+import { Activity, Languages, MessageCircle, UserRoundCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import LanguagePie from '../components/LanguagePie';
@@ -36,23 +37,32 @@ export default function Dashboard() {
 
   return (
     <>
-      <h1 className="page-title">Dashboard</h1>
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Enterprise insights</p>
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+      </div>
       <div className="card-grid">
         <div className="stat-card">
+          <MessageCircle className="stat-icon" size={22} />
           <div className="value">{data?.total_chats ?? 0}</div>
           <div className="label">Total conversations</div>
         </div>
         <div className="stat-card">
+          <UserRoundCheck className="stat-icon" size={22} />
           <div className="value">{data?.leads_generated ?? 0}</div>
           <div className="label">Leads captured ({leadPct}%)</div>
         </div>
         <div className="stat-card">
+          <Languages className="stat-icon" size={22} />
           <div className="label" style={{ marginBottom: 8 }}>
             Language breakdown (chats)
           </div>
           <LanguagePie data={data?.language_breakdown} />
         </div>
         <div className="stat-card">
+          <Languages className="stat-icon" size={22} />
           <div className="label" style={{ marginBottom: 8 }}>
             Users by language (unique emails)
           </div>
@@ -60,7 +70,9 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="chart-card">
-        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>Daily activity (last 30 days)</h2>
+        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>
+          <Activity size={18} /> Daily activity (last 30 days)
+        </h2>
         <DailyActivityChart dailyStats={data?.daily_stats} />
       </div>
     </>

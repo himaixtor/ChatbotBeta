@@ -1,0 +1,10 @@
+{
+  "name": "chatbot-suite",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/start-all.js",
+    "status": "node scripts/status-all.js",
+    "kill": "node scripts/kill-all.js"
+  }
+}

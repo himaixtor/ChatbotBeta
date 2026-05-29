@@ -1,5 +1,5 @@
 const express = require('express');
-const roleController = require('../controllers/roleController');
+const userController = require('../controllers/userController');
 const authenticate = require('../middleware/authenticate');
 const { requirePermission } = require('../middleware/requireRole');
 
@@ -8,9 +8,8 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requirePermission('can_manage_users'));
 
-router.get('/', roleController.listRoles);
-router.post('/', roleController.createRole);
-router.put('/:uid', roleController.updateRole);
-router.delete('/:uid', roleController.deleteRole);
+router.get('/', userController.listUsers);
+router.post('/', userController.createUser);
+router.put('/:uid', userController.updateUser);
 
 module.exports = router;

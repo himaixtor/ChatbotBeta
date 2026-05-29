@@ -29,6 +29,16 @@ function setTokenCookies(res, accessToken, refreshToken) {
   });
 }
 
+async function getUserPermissions(roleName) {
+  const role = await prisma.role.findUnique({ where: { role_name: roleName } });
+  if (!role) return null;
+  return {
+    can_view_all_chats: role.can_view_all_chats,
+    can_download: role.can_download,
+    can_manage_users: role.can_manage_users,
+  };
+}
+
 async function register(req, res, next) {
   try {
     const { email, password, name, role, contact_number } = req.body;
@@ -134,10 +144,18 @@ console.log('[auth/login] user found', {
 
     setTokenCookies(res, accessToken, refreshToken);
 
+    const permissions = await getUserPermissions(user.role);
+
     res.json({
       accessToken,
       refreshToken,
-      user: { uid: user.uid, email: user.email, name: user.name, role: user.role },
+      user: {
+        uid: user.uid,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        permissions,
+      },
     });
   } catch (error) {
     next(error);

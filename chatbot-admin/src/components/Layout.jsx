@@ -1,25 +1,45 @@
+import { BarChart3, Bot, LogOut, MessageSquareText, UsersRound } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const canManageUsers = user?.permissions?.can_manage_users || user?.role === 'admin';
 
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <h2>Chatbot Admin</h2>
+        <div className="brand-mark">
+          <span className="brand-icon">A</span>
+          <div>
+            <h2>Aixtor Bot</h2>
+            <p>Enterprise assistant</p>
+          </div>
+        </div>
         <nav>
           <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <BarChart3 size={18} />
             Dashboard
           </NavLink>
           <NavLink to="/chats" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <MessageSquareText size={18} />
             Chat History
           </NavLink>
+          {canManageUsers && (
+            <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>
+              <UsersRound size={18} />
+              User Management
+            </NavLink>
+          )}
         </nav>
         <div className="user-bar">
-          <div>{user?.name}</div>
-          <div>{user?.role}</div>
-          <button type="button" className="btn btn-secondary" style={{ marginTop: 8 }} onClick={logout}>
+          <Bot size={18} />
+          <div className="user-meta">
+            <div>{user?.name}</div>
+            <div>{user?.role}</div>
+          </div>
+          <button type="button" className="btn-icon logout-btn" title="Logout" onClick={logout}>
+            <LogOut size={18} />
             Logout
           </button>
         </div>

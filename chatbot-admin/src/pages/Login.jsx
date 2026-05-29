@@ -28,7 +28,13 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Admin Login</h1>
+        <div className="login-brand">
+          <span className="brand-icon">A</span>
+          <div>
+            <h1>Admin Login</h1>
+            <p>Aixtor-style enterprise chatbot console</p>
+          </div>
+        </div>
         {error && <p className="error-text">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">

@@ -6,7 +6,7 @@ const { requireRole, requirePermission } = require('../middleware/requireRole');
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requireRole('admin', 'manager', 'viewer'));
+router.use(requirePermission('can_view_all_chats'));
 
 
 router.get('/chats', adminController.listChats);

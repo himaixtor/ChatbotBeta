@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Chats from './pages/Chats';
+import UserManagement from './pages/UserManagement';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="chats" element={<Chats />} />
+            <Route path="users" element={<UserManagement />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
