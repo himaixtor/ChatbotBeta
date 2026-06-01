@@ -56,20 +56,30 @@ async function sendMessage(req, res, next) {
 
     const leads = aiResult.extracted_leads;
     if (leads) {
-      const updateData = {};
-      if (leads.name) updateData.name = leads.name;
-      if (leads.email) updateData.email = leads.email;
-      if (leads.interested_in) updateData.interested_in = leads.interested_in;
-      if (leads.language) updateData.chat_language = leads.language;
-      if (leads.lead_complete) updateData.lead_generated = true;
+      // Don't overwrite existing non-empty values in the session.
+      const currentSession = await prisma.chatBot.findUnique({
+        where: { session_id },
+        select: { name: true, email: true, chat_language: true, interested_in: true, lead_generated: true },
+      });
 
-      if (Object.keys(updateData).length > 0) {
-        await prisma.chatBot.update({
-          where: { session_id },
-          data: updateData,
-        });
+      if (currentSession) {
+        const updateData = {};
+
+        if (leads.name && !currentSession.name) updateData.name = leads.name;
+        if (leads.email && !currentSession.email) updateData.email = leads.email;
+        if (leads.interested_in && !currentSession.interested_in) updateData.interested_in = leads.interested_in;
+        if (leads.language && !currentSession.chat_language) updateData.chat_language = leads.language;
+        if (leads.lead_complete && !currentSession.lead_generated) updateData.lead_generated = true;
+
+        if (Object.keys(updateData).length > 0) {
+          await prisma.chatBot.update({
+            where: { session_id },
+            data: updateData,
+          });
+        }
       }
     }
+
 
     res.json({
       response: aiResult.response,
