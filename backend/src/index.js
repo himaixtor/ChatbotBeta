@@ -15,10 +15,14 @@ const chatRoutes = require('./routes/chatRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const userRoutes = require('./routes/userRoutes');
+const schedulerRoutes = require('./routes/schedulerRoutes');
+const { startSchedulerRunner } = require('./services/schedulerRunner');
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// const corsOrigins = (process.env.CORS_ORIGIN || 'http://172.16.1.67:5173')
 const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim());
@@ -52,6 +56,7 @@ const corsOptionsDelegate = (req, callback) => {
     corsOptions.credentials = false;
   }
   // 3. If dynamic localhost/127.0.0.1 (development admin panel or widgets)
+  // else if (origin.startsWith('http://172.16.1.67:') || origin.startsWith('http://127.0.0.1:')) {
   else if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
     corsOptions.origin = origin;
     corsOptions.credentials = true;
@@ -80,11 +85,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/session', sessionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/scheduler', schedulerRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
+
 
 app.use(errorHandler);
 
 app.listen(PORT, () => {
+  // log(`Server running on http://172.16.1.67:${PORT}`);
   log(`Server running on http://localhost:${PORT}`);
+  // start scheduler after server boot
+  startSchedulerRunner();
 });
+

@@ -19,6 +19,18 @@ async function createSession(req, res, next) {
       data: { session_id, expires_at },
     });
 
+    // Insert welcome message into Chat table and mark it as welcome.
+    // This is required for schedulerRunner cleanup logic which relies on `Chat.is_welcome`.
+    // Note: timestamp will be auto-set by Prisma (default now()).
+    await prisma.chat.create({
+      data: {
+        session_id,
+        response_type: 'bot',
+        message_text: 'Hi! How can I help you today?',
+        is_welcome: true,
+      },
+    });
+
     console.log('[session/create] created OK', { session_id });
 
     res.status(201).json({ session_id, expires_at });
