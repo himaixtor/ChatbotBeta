@@ -8,9 +8,12 @@ const logDir = path.join(stateDir, 'logs');
 const pidFile = path.join(stateDir, 'pids.json');
 
 const services = [
+  // { name: 'backend', cwd: 'backend', command: 'node', args: ['--watch', 'src/index.js'], url: 'http://172.16.1.67:5000/health' },
   { name: 'backend', cwd: 'backend', command: 'node', args: ['--watch', 'src/index.js'], url: 'http://localhost:5000/health' },
   { name: 'chatbot', cwd: 'chatbot', command: 'node', args: ['node_modules/webpack/bin/webpack.js', '--mode', 'development', '--watch'] },
+  // { name: 'chatbot-admin', cwd: 'chatbot-admin', command: 'node', args: ['node_modules/vite/bin/vite.js', '--host', '0.0.0.0'], url: 'http://172.16.1.67:5173' },
   { name: 'chatbot-admin', cwd: 'chatbot-admin', command: 'node', args: ['node_modules/vite/bin/vite.js', '--host', '0.0.0.0'], url: 'http://localhost:5173' },
+  // { name: 'widget-test', cwd: 'widget-test', command: 'node', args: ['index.js'], url: 'http://172.16.1.67:8090' },
   { name: 'widget-test', cwd: 'widget-test', command: 'node', args: ['index.js'], url: 'http://localhost:8090' },
 ];
 

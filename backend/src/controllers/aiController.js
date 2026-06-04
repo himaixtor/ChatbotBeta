@@ -20,7 +20,8 @@ async function callAIApi(sessionId, message, messages = []) {
     };
   };
 
-  const baseUrl = process.env.PYTHON_AI_API_URL || 'http://localhost:8010/api/v1/chat';
+  const baseUrl = process.env.PYTHON_AI_API_URL || 'http://172.16.1.67:8010/api/v1/chat';
+  // const baseUrl = process.env.PYTHON_AI_API_URL || 'http://localhost:8010/api/v1/chat';
   const useMock = process.env.USE_MOCK_AI === 'true';
 
   try {

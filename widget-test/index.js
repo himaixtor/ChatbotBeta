@@ -5,6 +5,7 @@ const path = require('path');
 const rootDir = __dirname;
 const projectDir = path.resolve(rootDir, '..');
 const port = Number(process.env.PORT || 8090);
+// const host = process.env.HOST || '172.16.1.67';
 const host = process.env.HOST || 'localhost';
 const apiEndpoint = process.env.API_ENDPOINT || '';
 
@@ -44,6 +45,7 @@ function getFilePath(urlPath) {
 function patchIndexHtml(html, req) {
   const endpoint =
     apiEndpoint ||
+    // `http://${req.headers.host ? req.headers.host.split(':')[0] : '172.16.1.67'}:5000`;
     `http://${req.headers.host ? req.headers.host.split(':')[0] : 'localhost'}:5000`;
 
   return html.replace(

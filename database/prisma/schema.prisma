@@ -10,18 +10,18 @@ generator client {
 }
 
 model User {
-  uid                    String         @id @default(uuid())
-  email                  String         @unique
-  name                   String
-  password_hash          String
-  role                   String
-  contact_number         String?
-  created_at             DateTime       @default(now())
-  updated_at             DateTime       @updatedAt
-  is_active              Boolean        @default(true)
-  failed_login_attempts  Int            @default(0)
-  locked_until           DateTime?
-  refresh_tokens         RefreshToken[]
+  uid                   String         @id @default(uuid())
+  email                 String         @unique
+  name                  String
+  password_hash         String
+  role                  String
+  contact_number        String?
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  is_active             Boolean        @default(true)
+  failed_login_attempts Int            @default(0)
+  locked_until          DateTime?
+  refresh_tokens        RefreshToken[]
 
   @@index([email])
 }
@@ -47,20 +47,25 @@ model Role {
 }
 
 model ChatBot {
-  session_id     String   @id @default(uuid())
+  session_id     String  @id @default(uuid())
   name           String?
   email          String?
   chat_language  String?
   interested_in  String?
-  lead_generated Boolean  @default(false)
-  created_at     DateTime @default(now())
-  expires_at     DateTime
-  chats          Chat[]
+  lead_generated Boolean @default(false)
+
+  // Scheduler delete targeting: focus session marker
+  is_focus Boolean @default(false)
+
+  created_at DateTime @default(now())
+  expires_at DateTime
+  chats      Chat[]
 
   @@index([email])
   @@index([created_at])
   @@index([lead_generated])
   @@index([chat_language])
+  @@index([is_focus])
 }
 
 model Chat {
@@ -72,7 +77,53 @@ model Chat {
   token_count   Int?
   is_visible    Boolean  @default(true)
 
+  // Scheduler delete targeting: welcome message marker
+  is_welcome Boolean @default(false)
+
   chatbot ChatBot @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
 
   @@index([session_id, timestamp])
+  @@index([is_welcome])
+}
+
+model SchedulerConfig {
+  id       String  @id @default(uuid())
+  job_name String
+  details  String?
+
+  // Human-friendly scheduling inputs
+  run_timing      String?
+  cron_expression String
+
+  is_active Boolean @default(true)
+
+  // audit
+  created_by String?
+  updated_by String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  executions SchedulerExecutionHistory[]
+}
+
+model SchedulerExecutionHistory {
+  id           String @id @default(uuid())
+  scheduler_id String
+
+  start_time DateTime
+  end_time   DateTime?
+  status     String
+
+  records_processed Int @default(0)
+  records_deleted   Int @default(0)
+
+  error_message String?
+
+  created_at DateTime @default(now())
+
+  scheduler SchedulerConfig @relation(fields: [scheduler_id], references: [id], onDelete: Cascade)
+
+  @@index([scheduler_id])
+  @@index([created_at])
+  @@index([status])
 }

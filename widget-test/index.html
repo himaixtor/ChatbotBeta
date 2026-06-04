@@ -85,6 +85,7 @@
         <p>Preview the embedded assistant with the same clean blue, navy, and white visual direction used across the admin portal.</p>
       </section>
       <div class="note">
+        <!-- Backend API must be running at <code>http://172.16.1.67:5000</code>. -->
         Backend API must be running at <code>http://localhost:5000</code>.
         Open this page, then click the assistant bubble in the bottom-right corner.
       </div>
@@ -95,6 +96,7 @@
 
     <script>
       window.ChatbotWidget.init({
+        // apiEndpoint: 'http://172.16.1.67:5000',
         apiEndpoint: 'http://localhost:5000',
         botName: 'Aixtor Assistant',
         welcomeMessage: 'Hi! How can I help you today?',

@@ -1,4 +1,5 @@
-import { BarChart3, Bot, LogOut, MessageSquareText, UsersRound } from 'lucide-react';
+import { BarChart3, Bot, Clock, LogOut, MessageSquareText, UsersRound } from 'lucide-react';
+
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -25,6 +26,13 @@ export default function Layout() {
             <MessageSquareText size={18} />
             Chat History
           </NavLink>
+          <NavLink
+            to="/scheduler"
+            className={({ isActive }) => (isActive ? 'active' : '')}
+          >
+            <Clock size={18} />
+            Scheduler
+          </NavLink>
           {canManageUsers && (
             <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>
               <UsersRound size={18} />
@@ -32,6 +40,7 @@ export default function Layout() {
             </NavLink>
           )}
         </nav>
+
         <div className="user-bar">
           <Bot size={18} />
           <div className="user-meta">

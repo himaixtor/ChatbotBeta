@@ -6,8 +6,11 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Chats from './pages/Chats';
 import UserManagement from './pages/UserManagement';
+import SchedulerJobs from './pages/SchedulerJobs';
 
 export default function App() {
+
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -25,6 +28,7 @@ export default function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="chats" element={<Chats />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="scheduler" element={<SchedulerJobs />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
