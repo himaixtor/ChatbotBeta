@@ -11,9 +11,9 @@ import ViewChatModal from '../components/ViewChatModal';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 
 const LANG_COLORS = {
-  English: '#dbeafe',
+  English: '#ffedd5',
   Hindi: '#fef3c7',
-  Gujarati: '#dcfce7',
+  Gujarati: '#fed7aa',
 };
 
 function canDownload(role) {
@@ -222,7 +222,7 @@ export default function Chats() {
                       <span
                         className="badge badge-lang"
                         style={{
-                          background: LANG_COLORS[row.chat_language] || '#f1f5f9',
+                          background: LANG_COLORS[row.chat_language] || '#f4ead7',
                         }}
                       >
                         {row.chat_language}

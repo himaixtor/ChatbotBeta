@@ -35,11 +35,11 @@ export default function DailyActivityChart({ dailyStats = [] }) {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="English" stackId="lang" fill="#93c5fd" />
+        <Bar dataKey="English" stackId="lang" fill="#fbbf24" />
         <Bar dataKey="Hindi" stackId="lang" fill="#fcd34d" />
-        <Bar dataKey="Gujarati" stackId="lang" fill="#86efac" />
-        <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={2} name="Total chats" />
-        <Line type="monotone" dataKey="leads" stroke="#16a34a" strokeWidth={2} name="Leads" />
+        <Bar dataKey="Gujarati" stackId="lang" fill="#fb923c" />
+        <Line type="monotone" dataKey="total" stroke="#ea580c" strokeWidth={2} name="Total chats" />
+        <Line type="monotone" dataKey="leads" stroke="#15803d" strokeWidth={2} name="Leads" />
       </ComposedChart>
     </ResponsiveContainer>
   );
