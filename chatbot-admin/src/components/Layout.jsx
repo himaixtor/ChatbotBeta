@@ -14,7 +14,7 @@ export default function Layout() {
           <span className="brand-icon">A</span>
           <div>
             <h2>Aixtor Bot</h2>
-            <p>Enterprise assistant</p>
+            <p>Solar assistant</p>
           </div>
         </div>
         <nav>

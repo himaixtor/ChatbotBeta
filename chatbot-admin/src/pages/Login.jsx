@@ -32,7 +32,7 @@ export default function Login() {
           <span className="brand-icon">A</span>
           <div>
             <h1>Admin Login</h1>
-            <p>Aixtor-style enterprise chatbot console</p>
+            <p>Solar chatbot console</p>
           </div>
         </div>
         {error && <p className="error-text">{error}</p>}

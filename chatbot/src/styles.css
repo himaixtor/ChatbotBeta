@@ -2,15 +2,15 @@
   all: initial;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
-  --primary: #136df5;
-  --primary-dark: #0750bf;
-  --accent: #00b6d6;
-  --user-bg: #136df5;
+  --primary: #f59e0b;
+  --primary-dark: #c2410c;
+  --accent: #facc15;
+  --user-bg: #f59e0b;
   --bot-bg: #ffffff;
-  --text: #102033;
-  --muted: #64748b;
-  --border: #dce8f7;
-  --panel-bg: #f5f9ff;
+  --text: #24160b;
+  --muted: #7c6a55;
+  --border: #f3dfb8;
+  --panel-bg: #fff8eb;
 }
 
 * {
@@ -37,10 +37,10 @@
   height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #fff;
+  color: #2d1808;
   border: none;
   cursor: pointer;
-  box-shadow: 0 18px 35px rgba(19, 109, 245, 0.34);
+  box-shadow: 0 18px 35px rgba(245, 158, 11, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,7 +61,7 @@
 
 .bubble:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 22px 42px rgba(19, 109, 245, 0.42);
+  box-shadow: 0 22px 42px rgba(245, 158, 11, 0.42);
 }
 
 .panel {
@@ -74,7 +74,7 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 24px 60px rgba(7, 26, 51, 0.22);
+  box-shadow: 0 24px 60px rgba(45, 24, 8, 0.22);
   overflow: hidden;
   margin-bottom: 12px;
 }
@@ -85,8 +85,8 @@
 
 .panel-header {
   background:
-    radial-gradient(circle at right, rgba(0, 182, 214, 0.25), transparent 12rem),
-    linear-gradient(135deg, #071a33, #0d2747);
+    radial-gradient(circle at right, rgba(250, 204, 21, 0.32), transparent 12rem),
+    linear-gradient(135deg, #2d1808, #4b2609);
   color: #fff;
   padding: 16px;
   display: flex;
@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #fff;
+  color: #2d1808;
   font-weight: 900;
   vertical-align: middle;
 }
@@ -133,7 +133,7 @@
   flex-direction: column;
   gap: 10px;
   background:
-    radial-gradient(circle at top left, rgba(19, 109, 245, 0.08), transparent 16rem),
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 16rem),
     var(--panel-bg);
 }
 
@@ -143,12 +143,70 @@
   border-radius: 8px;
   line-height: 1.45;
   word-break: break-word;
-  box-shadow: 0 8px 18px rgba(18, 56, 112, 0.08);
+  box-shadow: 0 8px 18px rgba(120, 53, 15, 0.1);
 }
+
+/* Markdown content inside messages */
+.msg.bot p {
+  margin: 0;
+}
+
+.msg.bot h1,
+.msg.bot h2,
+.msg.bot h3 {
+  margin: 8px 0 6px;
+}
+
+.msg.bot ul {
+  margin: 6px 0 6px 18px;
+  padding: 0;
+}
+
+.msg.bot li {
+  margin: 3px 0;
+}
+
+.msg.bot pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow: auto;
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+.msg.bot code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.msg.bot a {
+  color: #b45309;
+  text-decoration: underline;
+}
+
+.msg.bot .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.msg.bot .md-table th,
+.msg.bot .md-table td {
+  border: 1px solid rgba(248, 231, 196, 0.9);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.msg.bot .md-table th {
+  background: rgba(245, 158, 11, 0.12);
+  font-weight: 800;
+}
+
 
 .msg.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, var(--user-bg), var(--primary-dark));
+  background: linear-gradient(135deg, #ea580c, var(--primary-dark));
   color: #fff;
 }
 
@@ -156,7 +214,7 @@
   align-self: flex-start;
   background: var(--bot-bg);
   color: var(--text);
-  border: 1px solid #edf3fb;
+  border: 1px solid #f8e7c4;
 }
 
 .typing {
@@ -165,7 +223,7 @@
   gap: 4px;
   padding: 12px;
   background: #fff;
-  border: 1px solid #edf3fb;
+  border: 1px solid #f8e7c4;
   border-radius: 8px;
 }
 
@@ -243,20 +301,20 @@
 }
 
 .input-area textarea:focus {
-  border-color: rgba(19, 109, 245, 0.65);
-  box-shadow: 0 0 0 4px rgba(19, 109, 245, 0.12);
+  border-color: rgba(245, 158, 11, 0.72);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
 }
 
 .send-btn {
   min-height: 42px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, #ea580c, var(--primary-dark));
   color: #fff;
   border: none;
   border-radius: 8px;
   padding: 10px 15px;
   cursor: pointer;
   font-weight: 800;
-  box-shadow: 0 10px 20px rgba(19, 109, 245, 0.22);
+  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.25);
 }
 
 .send-btn:disabled {
