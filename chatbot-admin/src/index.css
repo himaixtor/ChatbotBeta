@@ -618,6 +618,63 @@ code {
   color: var(--ink);
 }
 
+/* Markdown content inside bot messages */
+.modal-msg-content p {
+  margin: 0;
+}
+
+.modal-msg-content h1,
+.modal-msg-content h2,
+.modal-msg-content h3 {
+  margin: 8px 0 6px;
+}
+
+.modal-msg-content ul {
+  margin: 6px 0 6px 18px;
+  padding: 0;
+}
+
+.modal-msg-content li {
+  margin: 3px 0;
+}
+
+.modal-msg-content pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow: auto;
+  background: #0b1220;
+  color: #e5e7eb;
+}
+
+.modal-msg-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.modal-msg-content a {
+  color: #b45309;
+  text-decoration: underline;
+}
+
+.modal-msg-content .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.modal-msg-content .md-table th,
+.modal-msg-content .md-table td {
+  border: 1px solid rgba(248, 231, 196, 0.9);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.modal-msg-content .md-table th {
+  background: rgba(245, 158, 11, 0.12);
+  font-weight: 800;
+}
+
 .modal-msg time {
   display: block;
   font-size: 0.7rem;
