@@ -11,10 +11,10 @@ export default function Layout() {
     <div className="app-layout">
       <aside className="sidebar">
         <div className="brand-mark">
-          <span className="brand-icon">A</span>
+          <span className="brand-icon">K</span>
           <div>
-            <h2>Aixtor Bot</h2>
-            <p>Solar assistant</p>
+            <h2>Kirloskar Solar</h2>
+            <p>Chatbot Admin</p>
           </div>
         </div>
         <nav>

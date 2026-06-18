@@ -2,15 +2,15 @@
   all: initial;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
-  --primary: #f59e0b;
-  --primary-dark: #c2410c;
-  --accent: #facc15;
-  --user-bg: #f59e0b;
+  --primary: #008C89;
+  --primary-dark: #006F6D;
+  --accent: #D17A44;
+  --user-bg: #008C89;
   --bot-bg: #ffffff;
-  --text: #24160b;
-  --muted: #7c6a55;
-  --border: #f3dfb8;
-  --panel-bg: #fff8eb;
+  --text: #212529;
+  --muted: #6D6E70;
+  --border: #e2e8f0;
+  --panel-bg: #ffffff;
 }
 
 * {
@@ -36,32 +36,34 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #2d1808;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #FFFFFF;
   border: none;
   cursor: pointer;
-  box-shadow: 0 18px 35px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 10px 25px rgba(0, 140, 137, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
 }
 
 .bubble span {
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  border: 2px solid var(--accent);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-weight: 800;
   font-size: 18px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .bubble:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 22px 42px rgba(245, 158, 11, 0.42);
+  box-shadow: 0 14px 30px rgba(0, 140, 137, 0.35);
 }
 
 .panel {
@@ -73,10 +75,11 @@
   max-height: calc(100vh - 100px);
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 24px 60px rgba(45, 24, 8, 0.22);
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0, 111, 109, 0.15);
   overflow: hidden;
   margin-bottom: 12px;
+  transition: all 0.3s ease;
 }
 
 .panel.open {
@@ -85,28 +88,30 @@
 
 .panel-header {
   background:
-    radial-gradient(circle at right, rgba(250, 204, 21, 0.32), transparent 12rem),
-    linear-gradient(135deg, #2d1808, #4b2609);
+    radial-gradient(circle at right, rgba(209, 122, 68, 0.3), transparent 12rem),
+    linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
   padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bot-avatar {
   width: 32px;
   height: 32px;
   margin-right: 9px;
-  border-radius: 8px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #2d1808;
-  font-weight: 900;
+  background: var(--accent);
+  color: #FFFFFF;
+  font-weight: 800;
   vertical-align: middle;
+  box-shadow: 0 2px 6px rgba(209, 122, 68, 0.3);
 }
 
 #bot-title {
@@ -123,6 +128,11 @@
   font-size: 20px;
   cursor: pointer;
   line-height: 1;
+  transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .messages {
@@ -133,17 +143,16 @@
   flex-direction: column;
   gap: 10px;
   background:
-    radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 16rem),
+    radial-gradient(circle at top left, rgba(0, 140, 137, 0.06), transparent 16rem),
     var(--panel-bg);
 }
 
 .msg {
   max-width: 85%;
   padding: 11px 13px;
-  border-radius: 8px;
+  border-radius: 12px;
   line-height: 1.45;
   word-break: break-word;
-  box-shadow: 0 8px 18px rgba(120, 53, 15, 0.1);
 }
 
 /* Markdown content inside messages */
@@ -155,6 +164,7 @@
 .msg.bot h2,
 .msg.bot h3 {
   margin: 8px 0 6px;
+  color: var(--primary-dark);
 }
 
 .msg.bot ul {
@@ -180,8 +190,15 @@
 }
 
 .msg.bot a {
-  color: #b45309;
-  text-decoration: underline;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px dashed var(--primary);
+}
+
+.msg.bot a:hover {
+  color: var(--primary-dark);
+  border-bottom-style: solid;
 }
 
 .msg.bot .md-table {
@@ -193,28 +210,32 @@
 
 .msg.bot .md-table th,
 .msg.bot .md-table td {
-  border: 1px solid rgba(248, 231, 196, 0.9);
+  border: 1px solid rgba(0, 140, 137, 0.15);
   padding: 6px 8px;
   vertical-align: top;
 }
 
 .msg.bot .md-table th {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(0, 140, 137, 0.08);
   font-weight: 800;
+  color: var(--primary-dark);
 }
-
 
 .msg.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, #ea580c, var(--primary-dark));
-  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #FFFFFF;
+  border-bottom-right-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 140, 137, 0.15);
 }
 
 .msg.bot {
   align-self: flex-start;
   background: var(--bot-bg);
   color: var(--text);
-  border: 1px solid #f8e7c4;
+  border: 1px solid rgba(0, 140, 137, 0.15);
+  border-bottom-left-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .typing {
@@ -223,8 +244,8 @@
   gap: 4px;
   padding: 12px;
   background: #fff;
-  border: 1px solid #f8e7c4;
-  border-radius: 8px;
+  border: 1px solid rgba(0, 140, 137, 0.15);
+  border-radius: 12px;
 }
 
 .typing span {
@@ -298,28 +319,41 @@
   max-height: 110px;
   color: var(--text);
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .input-area textarea:focus {
-  border-color: rgba(245, 158, 11, 0.72);
-  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
+  border-color: rgba(0, 140, 137, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 140, 137, 0.12);
 }
 
 .send-btn {
   min-height: 42px;
-  background: linear-gradient(135deg, #ea580c, var(--primary-dark));
+  background: linear-gradient(135deg, var(--accent), #b86533);
   color: #fff;
   border: none;
   border-radius: 8px;
   padding: 10px 15px;
   cursor: pointer;
   font-weight: 800;
-  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 4px 12px rgba(209, 122, 68, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.send-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(209, 122, 68, 0.35);
+}
+
+.send-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 @media (max-width: 460px) {

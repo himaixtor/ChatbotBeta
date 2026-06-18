@@ -29,10 +29,10 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-brand">
-          <span className="brand-icon">A</span>
+          <span className="brand-icon">K</span>
           <div>
-            <h1>Admin Login</h1>
-            <p>Solar chatbot console</p>
+            <h1>Kirloskar Solar</h1>
+            <p>Chatbot Console</p>
           </div>
         </div>
         {error && <p className="error-text">{error}</p>}

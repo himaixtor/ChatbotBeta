@@ -49,7 +49,7 @@ class ChatbotWidgetClass {
       botName: config.botName || 'Support Bot',
       welcomeMessage:
         config.welcomeMessage || 'Hi! How can I help you today?',
-      primaryColor: config.primaryColor || '#F59E0B',
+      primaryColor: config.primaryColor || '#008C89',
       position: config.position || 'bottom-right',
     };
 

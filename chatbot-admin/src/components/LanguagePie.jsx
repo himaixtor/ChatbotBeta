@@ -1,12 +1,12 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const COLORS = ['#f59e0b', '#facc15', '#fb923c', '#15803d', '#7c6a55'];
+const COLORS = ['#009688', '#D17A44', '#006F6D', '#6D6E70', '#80cbc4'];
 
 export default function LanguagePie({ data = {} }) {
   const chartData = Object.entries(data).map(([name, value]) => ({ name, value }));
 
   if (!chartData.length) {
-    return <p style={{ color: '#7c6a55', fontSize: '0.875rem' }}>No data</p>;
+    return <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>No data</p>;
   }
 
   return (
