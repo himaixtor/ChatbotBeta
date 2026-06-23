@@ -4,6 +4,7 @@
 const prisma = require('../utils/prisma');
 const { parseIntSafe } = require('../utils/validators');
 const { rowsToCsv } = require('../utils/csv');
+const { maskEmail, maskText } = require('../utils/masking');
 
 function buildChatWhere(query) {
   const { search, language, lead_status, date_from, date_to } = query;
@@ -71,7 +72,15 @@ async function listChats(req, res, next) {
       }),
     ]);
 
-    res.json({ data, total, page, limit });
+    const isViewer = req.user?.role === 'viewer';
+    const chats = isViewer
+      ? data.map((chat) => ({
+          ...chat,
+          email: chat.email ? maskEmail(chat.email) : chat.email,
+        }))
+      : data;
+
+    res.json({ data: chats, total, page, limit });
   } catch (error) {
     next(error);
   }
@@ -228,7 +237,15 @@ async function getSessionMessages(req, res, next) {
       });
       if (!exists) return res.status(404).json({ error: 'Session not found' });
     }
-    res.json({ messages: chats });
+    const isViewer = req.user?.role === 'viewer';
+    const messages = isViewer
+      ? chats.map((c) => ({
+          ...c,
+          message_text: maskText(c.message_text),
+        }))
+      : chats;
+
+    res.json({ messages });
   } catch (error) {
     next(error);
   }

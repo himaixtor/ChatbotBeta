@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
+import { maskText } from '../utils/masking';
 
 function escapeHtml(str) {
   return str
@@ -93,6 +96,8 @@ function renderMarkdownToHtml(markdown) {
 }
 
 export default function ViewChatModal({ sessionId, onClose }) {
+  const { user } = useAuth();
+  const [revealSensitive, setRevealSensitive] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['session-messages', sessionId],
     queryFn: async () => {
@@ -102,11 +107,31 @@ export default function ViewChatModal({ sessionId, onClose }) {
     enabled: !!sessionId,
   });
 
+  const getDisplayText = (text) => {
+    if (user?.role === 'viewer') {
+      return maskText(text);
+    }
+    return revealSensitive ? text : maskText(text);
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose} role="presentation">
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog">
         <div className="modal-header">
-          <strong>Session {sessionId?.slice(0, 8)}…</strong>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <strong>Session {sessionId?.slice(0, 8)}…</strong>
+            {user?.role !== 'viewer' && (
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setRevealSensitive(!revealSensitive)}
+                title={revealSensitive ? 'Hide sensitive info' : 'Show sensitive info'}
+                style={{ minWidth: '28px', minHeight: '28px', padding: '4px' }}
+              >
+                {revealSensitive ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            )}
+          </div>
           <button type="button" className="btn-icon" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
@@ -120,11 +145,11 @@ export default function ViewChatModal({ sessionId, onClose }) {
               className={`modal-msg ${m.response_type === 'user' ? 'user' : 'bot'}`}
             >
               {m.response_type === 'user' ? (
-                m.message_text
+                getDisplayText(m.message_text)
               ) : (
                 <div
                   className="modal-msg-content"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(m.message_text) }}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(getDisplayText(m.message_text)) }}
                 />
               )}
               <time>{format(new Date(m.timestamp), 'dd MMM yyyy, HH:mm')}</time>

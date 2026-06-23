@@ -2,13 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Copy, Download, Eye, Search, Trash2 } from 'lucide-react';
+import { Copy, Download, Eye, EyeOff, Search, Trash2 } from 'lucide-react';
 import api from '../utils/api';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../hooks/useAuth';
 import Pagination from '../components/Pagination';
 import ViewChatModal from '../components/ViewChatModal';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import { maskEmail } from '../utils/masking';
 
 const LANG_COLORS = {
   English: '#ffedd5',
@@ -32,6 +33,14 @@ export default function Chats() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewSession, setViewSession] = useState(null);
+  const [revealedEmails, setRevealedEmails] = useState({});
+
+  const toggleRevealEmail = (sessionId) => {
+    setRevealedEmails((prev) => ({
+      ...prev,
+      [sessionId]: !prev[sessionId],
+    }));
+  };
 
   const page = Number(searchParams.get('page')) || 1;
   const limit = Number(searchParams.get('limit')) || 20;
@@ -216,7 +225,34 @@ export default function Chats() {
                     </button>
                   </td>
                   <td>{row.name || '—'}</td>
-                  <td>{row.email || '—'}</td>
+                  <td>
+                    {row.email ? (
+                      <>
+                        {user?.role === 'viewer' ? (
+                          <span>{maskEmail(row.email)}</span>
+                        ) : (
+                          <div className="email-cell">
+                            <span>
+                              {revealedEmails[row.session_id]
+                                ? row.email
+                                : maskEmail(row.email)}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              onClick={() => toggleRevealEmail(row.session_id)}
+                              title={revealedEmails[row.session_id] ? 'Hide email' : 'Show email'}
+                              style={{ minWidth: '24px', minHeight: '24px', padding: '2px' }}
+                            >
+                              {revealedEmails[row.session_id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td>
                     {row.chat_language ? (
                       <span

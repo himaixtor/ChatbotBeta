@@ -4,6 +4,7 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
 const { isValidEmail, requireFields } = require('../utils/validators');
+const { maskEmail, maskPhone } = require('../utils/masking');
 
 const BCRYPT_ROUNDS = 12;
 
@@ -32,7 +33,16 @@ async function listUsers(req, res, next) {
       select: userSelect,
     });
 
-    res.json({ data: users });
+    const isViewer = req.user?.role === 'viewer';
+    const responseData = isViewer
+      ? users.map((u) => ({
+          ...u,
+          email: maskEmail(u.email),
+          contact_number: u.contact_number ? maskPhone(u.contact_number) : u.contact_number,
+        }))
+      : users;
+
+    res.json({ data: responseData });
   } catch (error) {
     next(error);
   }
