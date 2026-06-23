@@ -1,11 +1,20 @@
-import { BarChart3, Bot, Clock, LogOut, MessageSquareText, UsersRound } from 'lucide-react';
+import {
+  BarChart3,
+  Bot,
+  Clock,
+  LogOut,
+  MessageSquareText,
+  UsersRound,
+} from "lucide-react";
 
-import { NavLink, Outlet } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const canManageUsers = user?.permissions?.can_manage_users || user?.role === 'admin';
+  const navigate = useNavigate();
+  const canManageUsers =
+    user?.permissions?.can_manage_users || user?.role === "admin";
 
   return (
     <div className="app-layout">
@@ -18,23 +27,32 @@ export default function Layout() {
           </div>
         </div>
         <nav>
-          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
             <BarChart3 size={18} />
             Dashboard
           </NavLink>
-          <NavLink to="/chats" className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink
+            to="/chats"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
             <MessageSquareText size={18} />
             Chat History
           </NavLink>
           <NavLink
             to="/scheduler"
-            className={({ isActive }) => (isActive ? 'active' : '')}
+            className={({ isActive }) => (isActive ? "active" : "")}
           >
             <Clock size={18} />
             Scheduler
           </NavLink>
           {canManageUsers && (
-            <NavLink to="/users" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <NavLink
+              to="/users"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
               <UsersRound size={18} />
               User Management
             </NavLink>
@@ -47,7 +65,15 @@ export default function Layout() {
             <div>{user?.name}</div>
             <div>{user?.role}</div>
           </div>
-          <button type="button" className="btn-icon logout-btn" title="Logout" onClick={logout}>
+          <button
+            type="button"
+            className="btn-icon logout-btn"
+            title="Logout"
+            onClick={async () => {
+              await logout();
+              navigate("/login", { replace: true });
+            }}
+          >
             <LogOut size={18} />
             Logout
           </button>
