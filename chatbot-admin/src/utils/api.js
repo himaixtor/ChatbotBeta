@@ -4,7 +4,20 @@
 import axios from 'axios';
 import { getAccessToken, getRefreshToken, setTokens, clearAuth } from './auth';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+function getApiUrl() {
+  const configured = import.meta.env.VITE_API_URL?.trim();
+  if (configured && configured !== 'auto') {
+    return configured.replace(/\/$/, '');
+  }
+
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:5000`;
+}
+
+const API_URL = getApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,

@@ -77,6 +77,11 @@ model Chat {
   token_count   Int?
   is_visible    Boolean  @default(true)
 
+  // Optional file attachment (image or PDF) stored as binary
+  file_name      String?
+  file_mime_type String?
+  file_data      Bytes?
+
   // Scheduler delete targeting: welcome message marker
   is_welcome Boolean @default(false)
 

@@ -21,11 +21,35 @@ const { startSchedulerRunner } = require('./services/schedulerRunner');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// const corsOrigins = (process.env.CORS_ORIGIN || 'http://172.16.1.67:5173')
-const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+const corsOrigins = (
+  process.env.CORS_ORIGIN ||
+  'http://localhost:3000,http://localhost:5173,http://localhost:8090,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:8090,http://172.16.1.67:3000,http://172.16.1.67:5173,http://172.16.1.67:8090'
+)
   .split(',')
   .map((o) => o.trim());
+
+function isPrivateLanHost(hostname) {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  );
+}
+
+function isAllowedDevOrigin(origin) {
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin);
+    return ['http:', 'https:'].includes(url.protocol) && isPrivateLanHost(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 app.use(
   helmet({
@@ -55,9 +79,8 @@ const corsOptionsDelegate = (req, callback) => {
     corsOptions.origin = '*';
     corsOptions.credentials = false;
   }
-  // 3. If dynamic localhost/127.0.0.1 (development admin panel or widgets)
-  // else if (origin.startsWith('http://172.16.1.67:') || origin.startsWith('http://127.0.0.1:')) {
-  else if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+  // 3. If dynamic localhost/LAN development origins (admin panel or widgets)
+  else if (isAllowedDevOrigin(origin)) {
     corsOptions.origin = origin;
     corsOptions.credentials = true;
   }
@@ -93,8 +116,8 @@ app.use('/api/users', userRoutes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  // log(`Server running on http://172.16.1.67:${PORT}`);
-  log(`Server running on http://localhost:${PORT}`);
+  log(`Server running on http://172.16.1.67:${PORT}`);
+  log(`LAN access available at http://172.16.1.67:${PORT}`);
   // start scheduler after server boot
   startSchedulerRunner();
 });

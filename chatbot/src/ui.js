@@ -51,10 +51,142 @@ export function createUI(shadow, config) {
 function escapeHtml(str) {
   return str
     .replace(/&/g, '&amp;')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function isImageMime(mimeType) {
+  return mimeType?.startsWith('image/');
+}
+
+function isPdfMime(mimeType) {
+  return mimeType === 'application/pdf';
+}
+
+function createAttachmentViewer({ fileName, mimeType, attachmentUrl, revokeOnClose, root }) {
+  const label = fileName || 'Attachment';
+  const overlay = document.createElement('div');
+  overlay.className = 'attachment-viewer-overlay';
+  overlay.setAttribute('role', 'presentation');
+
+  const viewer = document.createElement('div');
+  viewer.className = 'attachment-viewer';
+  viewer.setAttribute('role', 'dialog');
+  viewer.setAttribute('aria-label', `View ${label}`);
+
+  const header = document.createElement('div');
+  header.className = 'attachment-viewer-header';
+
+  const title = document.createElement('strong');
+  title.textContent = label;
+
+  const actions = document.createElement('div');
+  actions.className = 'attachment-viewer-actions';
+
+  const openBtn = document.createElement('button');
+  openBtn.type = 'button';
+  openBtn.className = 'attachment-icon-btn';
+  openBtn.textContent = 'Open';
+  openBtn.title = 'Open in new tab';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'attachment-icon-btn';
+  closeBtn.textContent = 'Close';
+  closeBtn.setAttribute('aria-label', 'Close viewer');
+
+  const body = document.createElement('div');
+  body.className = 'attachment-viewer-body';
+
+  if (isImageMime(mimeType)) {
+    const img = document.createElement('img');
+    img.src = attachmentUrl;
+    img.alt = label;
+    img.className = 'attachment-viewer-image';
+    body.appendChild(img);
+  } else if (isPdfMime(mimeType)) {
+    const iframe = document.createElement('iframe');
+    iframe.src = attachmentUrl;
+    iframe.title = label;
+    iframe.className = 'attachment-viewer-pdf';
+    body.appendChild(iframe);
+  } else {
+    const fallback = document.createElement('p');
+    fallback.textContent = 'Preview is not available for this file type.';
+    body.appendChild(fallback);
+  }
+
+  const closeViewer = () => {
+    overlay.remove();
+    if (revokeOnClose) URL.revokeObjectURL(attachmentUrl);
+  };
+
+  openBtn.addEventListener('click', () => {
+    window.open(attachmentUrl, '_blank', 'noopener,noreferrer');
+  });
+  closeBtn.addEventListener('click', closeViewer);
+  overlay.addEventListener('click', closeViewer);
+  viewer.addEventListener('click', (e) => e.stopPropagation());
+
+  actions.appendChild(openBtn);
+  actions.appendChild(closeBtn);
+  header.appendChild(title);
+  header.appendChild(actions);
+  viewer.appendChild(header);
+  viewer.appendChild(body);
+  overlay.appendChild(viewer);
+  root.appendChild(overlay);
+}
+
+function createFileAttachment(options) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'file-attachment';
+
+  const label = options.fileName || 'Attachment';
+  const mimeType = options.mimeType || '';
+  const isImage = isImageMime(mimeType);
+  const typeLabel = isImage ? 'Image' : isPdfMime(mimeType) ? 'PDF' : 'File';
+
+  const badge = document.createElement('span');
+  badge.className = 'file-attachment-badge';
+  badge.textContent = isImage ? 'IMG' : typeLabel.toUpperCase();
+
+  const meta = document.createElement('span');
+  meta.className = 'file-attachment-meta';
+
+  const name = document.createElement('span');
+  name.className = 'file-attachment-name';
+  name.textContent = label;
+
+  const hint = document.createElement('span');
+  hint.className = 'file-attachment-hint';
+  hint.textContent = `${typeLabel} - Click to view`;
+
+  meta.appendChild(name);
+  meta.appendChild(hint);
+  button.appendChild(badge);
+  button.appendChild(meta);
+
+  if (options.attachmentUrl) {
+    button.dataset.attachmentUrl = options.attachmentUrl;
+  }
+
+  button.addEventListener('click', () => {
+    const attachmentUrl = button.dataset.attachmentUrl;
+    if (!attachmentUrl) return;
+    createAttachmentViewer({
+      fileName: label,
+      mimeType,
+      attachmentUrl,
+      revokeOnClose: Boolean(options.revokeAttachmentUrlOnClose),
+      root: button.getRootNode(),
+    });
+  });
+
+  return button;
 }
 
 // Minimal safe markdown renderer for widget responses.
@@ -156,12 +288,26 @@ function renderMarkdownToHtml(markdown) {
   return md;
 }
 
-export function appendMessage(container, text, type) {
+export function appendMessage(container, text, type, options = {}) {
   const div = document.createElement('div');
   div.className = `msg ${type === 'user' ? 'user' : 'bot'}`;
 
   if (type === 'bot') {
     div.innerHTML = renderMarkdownToHtml(text);
+
+    if (options.askUpload && typeof options.onUpload === 'function') {
+      div.appendChild(createUploadWidget(options.onUpload));
+    }
+  } else if (options.isFileUpload) {
+    div.classList.add('file-upload');
+    div.appendChild(
+      createFileAttachment({
+        fileName: options.fileName || text,
+        mimeType: options.mimeType,
+        attachmentUrl: options.attachmentUrl,
+        revokeAttachmentUrlOnClose: options.revokeAttachmentUrlOnClose,
+      })
+    );
   } else {
     // User messages should remain plain/escaped.
     div.textContent = text;
@@ -169,6 +315,89 @@ export function appendMessage(container, text, type) {
 
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+const ALLOWED_UPLOAD_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+];
+
+function createUploadWidget(onUpload) {
+  const wrap = document.createElement('div');
+  wrap.className = 'upload-widget';
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp,application/pdf';
+  fileInput.className = 'upload-input';
+  fileInput.setAttribute('aria-label', 'Upload image or PDF');
+
+  const uploadBtn = document.createElement('button');
+  uploadBtn.type = 'button';
+  uploadBtn.className = 'upload-btn';
+  uploadBtn.textContent = 'Upload image or PDF';
+
+  const hint = document.createElement('span');
+  hint.className = 'upload-hint';
+  hint.textContent = 'One image or PDF, max 5MB';
+
+  const errorEl = document.createElement('span');
+  errorEl.className = 'upload-error';
+  errorEl.hidden = true;
+
+  uploadBtn.addEventListener('click', () => {
+    if (!wrap.classList.contains('upload-done')) {
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    errorEl.hidden = true;
+    errorEl.textContent = '';
+
+    if (!ALLOWED_UPLOAD_TYPES.includes(file.type)) {
+      errorEl.textContent = 'Please upload an image (JPG, PNG, GIF, WebP) or PDF.';
+      errorEl.hidden = false;
+      fileInput.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      errorEl.textContent = 'File must be 5MB or smaller.';
+      errorEl.hidden = false;
+      fileInput.value = '';
+      return;
+    }
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+
+    try {
+      await onUpload(file);
+      wrap.classList.add('upload-done');
+      uploadBtn.textContent = 'File uploaded';
+      hint.textContent = file.name;
+    } catch (err) {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload image or PDF';
+      errorEl.textContent = err.message || 'Upload failed. Please try again.';
+      errorEl.hidden = false;
+      fileInput.value = '';
+    }
+  });
+
+  wrap.appendChild(fileInput);
+  wrap.appendChild(uploadBtn);
+  wrap.appendChild(hint);
+  wrap.appendChild(errorEl);
+  return wrap;
 }
 
 

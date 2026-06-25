@@ -48,7 +48,7 @@ class ChatbotWidgetClass {
       apiEndpoint: config.apiEndpoint,
       botName: config.botName || 'Support Bot',
       welcomeMessage:
-        config.welcomeMessage || 'Hi! How can I help you today?',
+        config.welcomeMessage || "Hi I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?",
       primaryColor: config.primaryColor || '#008C89',
       position: config.position || 'bottom-right',
     };
@@ -135,7 +135,20 @@ class ChatbotWidgetClass {
         this.welcomeShown = true;
         for (const m of messages) {
           const type = m.response_type === 'user' ? 'user' : 'bot';
-          appendMessage(this.els.messages, m.message_text, type);
+          const isFileUpload = Boolean(m.file_name);
+          appendMessage(
+            this.els.messages,
+            isFileUpload ? m.file_name : m.message_text,
+            type,
+            isFileUpload
+              ? {
+                  isFileUpload,
+                  fileName: m.file_name,
+                  mimeType: m.file_mime_type,
+                  attachmentUrl: this.api.getAttachmentUrl(this.sessionId, m.id),
+                }
+              : {}
+          );
         }
       }
     } catch {
@@ -167,7 +180,7 @@ class ChatbotWidgetClass {
     try {
       const result = await this.api.sendMessage(this.sessionId, text);
       hideTyping(this.els.messages);
-      appendMessage(this.els.messages, result.response, 'bot');
+      this.appendBotResponse(result);
       this.pendingMessage = null;
     } catch (err) {
       hideTyping(this.els.messages);
@@ -178,6 +191,56 @@ class ChatbotWidgetClass {
         return this.sendUserMessage(text);
       }
       this.showError('Failed to send message. Please try again.');
+    }
+  }
+
+  appendBotResponse(result) {
+    appendMessage(this.els.messages, result.response, 'bot', {
+      askUpload: Boolean(result.ask_upload),
+      onUpload: result.ask_upload ? (file) => this.handleFileUpload(file) : undefined,
+    });
+  }
+
+  async handleFileUpload(file) {
+    if (!this.sessionId) {
+      await this.ensureSession();
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    const fileMessage = appendMessage(this.els.messages, file.name, 'user', {
+      isFileUpload: true,
+      fileName: file.name,
+      mimeType: file.type,
+      attachmentUrl: previewUrl,
+      revokeAttachmentUrlOnClose: false,
+    });
+    showTyping(this.els.messages);
+    this.hideError();
+
+    try {
+      const result = await this.api.uploadFile(this.sessionId, file);
+      if (result.file_message?.id) {
+        const attachment = fileMessage.querySelector('.file-attachment');
+        if (attachment) {
+          attachment.dataset.attachmentUrl = this.api.getAttachmentUrl(
+            this.sessionId,
+            result.file_message.id
+          );
+        }
+        URL.revokeObjectURL(previewUrl);
+      }
+      hideTyping(this.els.messages);
+      this.appendBotResponse(result);
+    } catch (err) {
+      URL.revokeObjectURL(previewUrl);
+      hideTyping(this.els.messages);
+      if (err.status === 410) {
+        await this.createNewSession();
+        appendMessage(this.els.messages, this.config.welcomeMessage, 'bot');
+        this.welcomeShown = true;
+        throw new Error('Session expired. Please try again.');
+      }
+      throw err;
     }
   }
 

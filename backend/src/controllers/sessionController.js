@@ -26,7 +26,7 @@ async function createSession(req, res, next) {
       data: {
         session_id,
         response_type: 'bot',
-        message_text: 'Hi! How can I help you today?',
+        message_text: "Hi I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?",
         is_welcome: true,
       },
     });

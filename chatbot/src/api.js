@@ -28,6 +28,25 @@ export function createApiClient(apiEndpoint) {
         method: 'POST',
         body: JSON.stringify({ session_id, message }),
       }),
+    uploadFile: async (session_id, file) => {
+      const formData = new FormData();
+      formData.append('session_id', session_id);
+      formData.append('file', file);
+
+      const res = await fetch(`${base}/api/chat/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(data.error || res.statusText || 'Upload failed');
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    },
+    getAttachmentUrl: (sessionId, messageId) =>
+      `${base}/api/chat/history/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/file`,
     getHistory: (sessionId) =>
       request(`/api/chat/history/${sessionId}`, { method: 'GET' }),
   };

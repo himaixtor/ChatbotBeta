@@ -49,6 +49,7 @@
         font-size: clamp(2.2rem, 6vw, 4.2rem);
         line-height: 0.98;
         background: linear-gradient(135deg, #ffffff 60%, #b2dfdb 100%);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
@@ -89,6 +90,7 @@
         <p>Preview the embedded assistant styled with the Kirloskar Solar brand palette: greenish-teal primary highlights paired with coppery-orange accents.</p>
       </section>
       <div class="note">
+        <!-- Backend API must be running at <code>http://172.16.1.67:5000</code>. -->
         Backend API must be running at <code>http://localhost:5000</code>.
         Open this page, then click the assistant bubble in the bottom-right corner.
       </div>
@@ -99,9 +101,10 @@
 
     <script>
       window.ChatbotWidget.init({
+        // apiEndpoint: 'http://172.16.1.67:5000',
         apiEndpoint: 'http://localhost:5000',
         botName: 'Solar Assistant',
-        welcomeMessage: 'Hi! How can I help you with solar panels or solar systems today?',
+        welcomeMessage: "Hi I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?",
         primaryColor: '#008C89',
         position: 'bottom-right',
       });

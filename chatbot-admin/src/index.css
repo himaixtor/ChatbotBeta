@@ -734,6 +734,127 @@ code {
   margin-top: 5px;
 }
 
+.chat-attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.chat-attachment-card:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.chat-attachment-card:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.chat-attachment-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.chat-attachment-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-attachment-name {
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.chat-attachment-type {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.chat-attachment-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #fecaca;
+}
+
+.attachment-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 30, 28, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.attachment-viewer {
+  width: min(960px, 100%);
+  max-height: calc(100vh - 48px);
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.attachment-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-blue);
+}
+
+.attachment-viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachment-viewer-body {
+  flex: 1;
+  min-height: 320px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.attachment-viewer-image {
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
+  object-fit: contain;
+}
+
+.attachment-viewer-pdf {
+  width: 100%;
+  height: calc(100vh - 160px);
+  border: 0;
+  background: #fff;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #e6f4f3 25%, #d1ebe8 50%, #e6f4f3 75%);
   background-size: 200% 100%;

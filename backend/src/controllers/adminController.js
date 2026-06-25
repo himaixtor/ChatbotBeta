@@ -230,6 +230,15 @@ async function getSessionMessages(req, res, next) {
     const chats = await prisma.chat.findMany({
       where: { session_id: sessionId, is_visible: true },
       orderBy: { timestamp: 'asc' },
+      select: {
+        id: true,
+        response_type: true,
+        message_text: true,
+        timestamp: true,
+        file_name: true,
+        file_mime_type: true,
+        file_data: true,
+      },
     });
     if (!chats.length) {
       const exists = await prisma.chatBot.findUnique({
@@ -238,14 +247,48 @@ async function getSessionMessages(req, res, next) {
       if (!exists) return res.status(404).json({ error: 'Session not found' });
     }
     const isViewer = req.user?.role === 'viewer';
-    const messages = isViewer
-      ? chats.map((c) => ({
-          ...c,
-          message_text: maskText(c.message_text),
-        }))
-      : chats;
+    const messages = chats.map(({ file_data, ...chat }) => ({
+      ...chat,
+      message_text: isViewer ? maskText(chat.message_text) : chat.message_text,
+      has_attachment: Boolean(file_data),
+    }));
 
     res.json({ messages });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getMessageAttachment(req, res, next) {
+  try {
+    const { sessionId, messageId } = req.params;
+    const id = parseIntSafe(messageId, NaN);
+    if (!Number.isFinite(id)) {
+      return res.status(400).json({ error: 'Invalid message id' });
+    }
+
+    const chat = await prisma.chat.findFirst({
+      where: {
+        id,
+        session_id: sessionId,
+        is_visible: true,
+        file_data: { not: null },
+      },
+      select: {
+        file_name: true,
+        file_mime_type: true,
+        file_data: true,
+      },
+    });
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    const safeName = (chat.file_name || 'attachment').replace(/[^\w.\-() ]+/g, '_');
+    res.setHeader('Content-Type', chat.file_mime_type || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+    res.send(Buffer.from(chat.file_data));
   } catch (error) {
     next(error);
   }
@@ -270,5 +313,6 @@ module.exports = {
   exportSession,
   exportAll,
   getSessionMessages,
+  getMessageAttachment,
   deleteSession,
 };

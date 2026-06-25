@@ -15,6 +15,10 @@ router.get(
   '/chats/:sessionId/messages',
   adminController.getSessionMessages
 );
+router.get(
+  '/chats/:sessionId/messages/:messageId/file',
+  adminController.getMessageAttachment
+);
 
 router.get(
   '/export/session/:sessionId',

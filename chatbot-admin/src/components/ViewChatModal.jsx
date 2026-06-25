@@ -5,6 +5,7 @@ import { X, Eye, EyeOff } from 'lucide-react';
 import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
 import { maskText } from '../utils/masking';
+import ChatAttachment from './ChatAttachment';
 
 function escapeHtml(str) {
   return str
@@ -145,7 +146,16 @@ export default function ViewChatModal({ sessionId, onClose }) {
               className={`modal-msg ${m.response_type === 'user' ? 'user' : 'bot'}`}
             >
               {m.response_type === 'user' ? (
-                getDisplayText(m.message_text)
+                m.has_attachment ? (
+                  <ChatAttachment
+                    sessionId={sessionId}
+                    messageId={m.id}
+                    fileName={m.file_name}
+                    mimeType={m.file_mime_type}
+                  />
+                ) : (
+                  getDisplayText(m.message_text)
+                )
               ) : (
                 <div
                   className="modal-msg-content"
