@@ -1,7 +1,10 @@
 /**
- * Authentication: register, login, refresh, logout.
+ * Authentication: register, login, refresh, logout, 2FA setup, 2FA verify.
  */
 const bcrypt = require('bcryptjs');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+const axios = require('axios');
 const prisma = require('../utils/prisma');
 const {
   signAccessToken,
@@ -14,6 +17,32 @@ const { isValidEmail, requireFields } = require('../utils/validators');
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_MINUTES = 15;
 const BCRYPT_ROUNDS = 12;
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+
+async function verifyRecaptcha(token) {
+  if (!RECAPTCHA_SECRET_KEY) {
+    console.warn('RECAPTCHA_SECRET_KEY not configured, skipping verification');
+    return true;
+  }
+
+  try {
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: RECAPTCHA_SECRET_KEY,
+          response: token,
+        },
+      }
+    );
+
+    return response.data.success && response.data.score > 0.5;
+  } catch (error) {
+    console.error('CAPTCHA verification error:', error);
+    return false;
+  }
+}
 
 function setTokenCookies(res, accessToken, refreshToken) {
   const isProd = process.env.NODE_ENV === 'production';
@@ -83,9 +112,17 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, captchaToken } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    // Verify CAPTCHA
+    if (captchaToken) {
+      const captchaValid = await verifyRecaptcha(captchaToken);
+      if (!captchaValid) {
+        return res.status(400).json({ error: 'CAPTCHA verification failed' });
+      }
     }
 
     const user = await prisma.user.findUnique({
@@ -129,6 +166,22 @@ console.log('[auth/login] user found', {
       where: { uid: user.uid },
       data: { failed_login_attempts: 0, locked_until: null },
     });
+
+    // Check if 2FA is enabled
+    if (user.two_fa_enabled) {
+      // Return a temporary token for 2FA verification
+      const tempPayload = { uid: user.uid, email: user.email, type: '2fa-temp' };
+      const tempToken = signAccessToken(tempPayload);
+      return res.json({
+        requires2FA: true,
+        tempToken,
+        user: {
+          uid: user.uid,
+          email: user.email,
+          name: user.name,
+        },
+      });
+    }
 
     const payload = { uid: user.uid, email: user.email, role: user.role };
     const accessToken = signAccessToken(payload);
@@ -226,4 +279,174 @@ async function logout(req, res, next) {
   }
 }
 
-module.exports = { register, login, refresh, logout };
+async function setup2FA(req, res, next) {
+  try {
+    const { uid } = req.user;
+    const user = await prisma.user.findUnique({ where: { uid } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.two_fa_enabled) {
+      return res.status(400).json({ error: '2FA is already enabled' });
+    }
+
+    const secret = speakeasy.generateSecret({
+      name: `Chatbot Admin (${user.email})`,
+      length: 32,
+    });
+
+    const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+
+    // Generate backup codes (8 codes for recovery)
+    const backupCodes = Array.from({ length: 8 }, () =>
+      Math.random().toString(36).substring(2, 10).toUpperCase()
+    );
+
+    res.json({
+      secret: secret.base32,
+      qrCode,
+      backupCodes,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function confirm2FA(req, res, next) {
+  try {
+    const { uid } = req.user;
+    const { token, secret, backupCodes } = req.body;
+
+    if (!token || !secret || !backupCodes) {
+      return res.status(400).json({ error: 'Token, secret, and backup codes required' });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+
+    if (!verified) {
+      return res.status(400).json({ error: 'Invalid 2FA token' });
+    }
+
+    const backupCodesStr = backupCodes.join(',');
+    await prisma.user.update({
+      where: { uid },
+      data: {
+        two_fa_enabled: true,
+        two_fa_secret: secret,
+        two_fa_backup_codes: backupCodesStr,
+      },
+    });
+
+    res.json({ message: '2FA enabled successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function verify2FA(req, res, next) {
+  try {
+    const { uid, email } = req.user;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: '2FA token required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { uid } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if token is a backup code
+    if (user.two_fa_backup_codes) {
+      const backupCodes = user.two_fa_backup_codes.split(',');
+      if (backupCodes.includes(token.toUpperCase())) {
+        // Remove used backup code
+        const newBackupCodes = backupCodes.filter((c) => c !== token.toUpperCase()).join(',');
+        await prisma.user.update({
+          where: { uid },
+          data: { two_fa_backup_codes: newBackupCodes || null },
+        });
+
+        // Continue with normal login flow
+        const payload = { uid: user.uid, email: user.email, role: user.role };
+        const accessToken = signAccessToken(payload);
+        const refreshToken = signRefreshToken(payload);
+
+        await prisma.refreshToken.create({
+          data: {
+            user_uid: user.uid,
+            token_hash: hashToken(refreshToken),
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+        });
+
+        setTokenCookies(res, accessToken, refreshToken);
+        const permissions = await getUserPermissions(user.role);
+
+        return res.json({
+          accessToken,
+          refreshToken,
+          user: {
+            uid: user.uid,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            permissions,
+          },
+        });
+      }
+    }
+
+    // Verify TOTP
+    const verified = speakeasy.totp.verify({
+      secret: user.two_fa_secret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+
+    if (!verified) {
+      return res.status(401).json({ error: 'Invalid 2FA token' });
+    }
+
+    // Login successful
+    const payload = { uid: user.uid, email: user.email, role: user.role };
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+
+    await prisma.refreshToken.create({
+      data: {
+        user_uid: user.uid,
+        token_hash: hashToken(refreshToken),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const permissions = await getUserPermissions(user.role);
+
+    res.json({
+      accessToken,
+      refreshToken,
+      user: {
+        uid: user.uid,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        permissions,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { register, login, refresh, logout, setup2FA, confirm2FA, verify2FA };

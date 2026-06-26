@@ -23,7 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const corsOrigins = (
   process.env.CORS_ORIGIN ||
-  'http://localhost:3000,http://localhost:5173,http://localhost:8090,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:8090,http://172.16.1.67:3000,http://172.16.1.67:5173,http://172.16.1.67:8090'
+  'http://localhost:3000,http://localhost:5173,http://localhost:8090,http://127.0.0.1:3000,http://127.0.0.1:5173,http://127.0.0.1:8090,http://172.16.1.67:3000,http://172.16.1.67:5173,http://172.16.1.67:8090,http://0.0.0.0:3000,http://0.0.0.0:5173,http://0.0.0.0:8090'
 )
   .split(',')
   .map((o) => o.trim());
