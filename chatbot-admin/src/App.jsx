@@ -3,7 +3,6 @@ import { AuthProvider } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import TwoFASetup from './pages/TwoFASetup';
 import Dashboard from './pages/Dashboard';
 import Chats from './pages/Chats';
 import UserManagement from './pages/UserManagement';
@@ -17,7 +16,6 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/setup-2fa" element={<TwoFASetup />} />
           <Route
             path="/"
             element={

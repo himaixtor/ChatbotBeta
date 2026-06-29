@@ -21,9 +21,6 @@ model User {
   is_active             Boolean        @default(true)
   failed_login_attempts Int            @default(0)
   locked_until          DateTime?
-  two_fa_enabled        Boolean        @default(false)
-  two_fa_secret         String?
-  two_fa_backup_codes   String?
   refresh_tokens        RefreshToken[]
 
   @@index([email])
