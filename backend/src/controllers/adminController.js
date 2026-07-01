@@ -88,7 +88,7 @@ async function listChats(req, res, next) {
 
 async function getStats(req, res, next) {
   try {
-    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang] =
+    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang, totalDocuments, totalUrls] =
       await Promise.all([
         prisma.chatBot.count(),
         prisma.chatBot.count({ where: { lead_generated: true } }),
@@ -98,7 +98,7 @@ async function getStats(req, res, next) {
           _count: { chat_language: true },
         }),
         prisma.$queryRaw`
-          SELECT 
+          SELECT
             DATE(created_at) as date,
             COUNT(*)::int as total,
             COUNT(CASE WHEN lead_generated = true THEN 1 END)::int as leads,
@@ -115,6 +115,8 @@ async function getStats(req, res, next) {
           where: { chat_language: { not: null }, email: { not: null } },
           _count: { email: true },
         }),
+        prisma.trainChatbot.count({ where: { is_active: true } }),
+        prisma.trainChatbotWithUrl.count({ where: { is_active: true } }),
       ]);
 
     const language_breakdown = {};
@@ -141,6 +143,8 @@ async function getStats(req, res, next) {
     res.json({
       total_chats: totalChats,
       leads_generated: leadsGenerated,
+      total_documents: totalDocuments,
+      total_urls: totalUrls,
       language_breakdown,
       users_by_language,
       daily_stats,

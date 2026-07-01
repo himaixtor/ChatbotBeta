@@ -5,6 +5,7 @@ import {
   LogOut,
   MessageSquareText,
   UsersRound,
+  Zap,
 } from "lucide-react";
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -14,7 +15,8 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const canManageUsers =
-    user?.permissions?.can_manage_users || user?.role === "admin";
+    user?.permissions?.can_manage_users || user?.role === "admin" || user?.role === "super_admin";
+  const isSuperAdmin = user?.role === "super_admin";
 
   return (
     <div className="app-layout">
@@ -48,6 +50,15 @@ export default function Layout() {
             <Clock size={18} />
             Scheduler
           </NavLink>
+          {isSuperAdmin && (
+            <NavLink
+              to="/train-ai"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Zap size={18} />
+              Train AI
+            </NavLink>
+          )}
           {canManageUsers && (
             <NavLink
               to="/users"

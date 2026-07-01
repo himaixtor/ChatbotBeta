@@ -6,7 +6,12 @@ const { requireRole, requirePermission } = require('../middleware/requireRole');
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requirePermission('can_view_all_chats'));
+router.use((req, res, next) => {
+  if (req.user?.role === 'super_admin') {
+    return next();
+  }
+  requirePermission('can_view_all_chats')(req, res, next);
+});
 
 
 router.get('/chats', adminController.listChats);
@@ -22,18 +27,33 @@ router.get(
 
 router.get(
   '/export/session/:sessionId',
-  requirePermission('can_download'),
+  (req, res, next) => {
+    if (req.user?.role === 'super_admin') {
+      return next();
+    }
+    requirePermission('can_download')(req, res, next);
+  },
   adminController.exportSession
 );
 router.get(
   '/export/all',
-  requirePermission('can_download'),
+  (req, res, next) => {
+    if (req.user?.role === 'super_admin') {
+      return next();
+    }
+    requirePermission('can_download')(req, res, next);
+  },
   adminController.exportAll
 );
 
 router.delete(
   '/chats/:sessionId',
-  requireRole('admin'),
+  (req, res, next) => {
+    if (req.user?.role === 'super_admin' || req.user?.role === 'admin') {
+      return next();
+    }
+    res.status(403).json({ error: 'Insufficient permissions' });
+  },
   adminController.deleteSession
 );
 

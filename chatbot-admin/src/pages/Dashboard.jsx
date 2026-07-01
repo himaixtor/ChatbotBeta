@@ -1,4 +1,4 @@
-import { Activity, Languages, MessageCircle, UserRoundCheck } from 'lucide-react';
+import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import LanguagePie from '../components/LanguagePie';
@@ -53,6 +53,16 @@ export default function Dashboard() {
           <UserRoundCheck className="stat-icon" size={22} />
           <div className="value">{data?.leads_generated ?? 0}</div>
           <div className="label">Leads captured ({leadPct}%)</div>
+        </div>
+        <div className="stat-card">
+          <FileText className="stat-icon" size={22} />
+          <div className="value">{data?.total_documents ?? 0}</div>
+          <div className="label">Ingested documents</div>
+        </div>
+        <div className="stat-card">
+          <LinkIcon className="stat-icon" size={22} />
+          <div className="value">{data?.total_urls ?? 0}</div>
+          <div className="label">Ingested URLs</div>
         </div>
         <div className="stat-card">
           <Languages className="stat-icon" size={22} />
