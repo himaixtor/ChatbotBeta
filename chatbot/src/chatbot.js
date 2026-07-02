@@ -1,5 +1,6 @@
 /**
  * Chatbot Widget — embeddable vanilla JS library with Shadow DOM.
+ * With D-ID Avatar (WebRTC) support
  */
 import widgetStyles from './styles.css';
 import { createApiClient } from './api.js';
@@ -10,6 +11,7 @@ import {
   hideTyping,
   clearMessages,
 } from './ui.js';
+import { AvatarRTC } from './avatar-rtc.js';
 
 const COOKIE_NAME = 'chatbot_session_id';
 const COOKIE_MAX_AGE = 24 * 60 * 60;
@@ -32,6 +34,11 @@ class ChatbotWidgetClass {
     this.els = null;
     this.pendingMessage = null;
     this.welcomeShown = false;
+
+    // Avatar state
+    this.currentMode = 'text'; // 'text' or 'video'
+    this.avatar = null;
+    this.avatarContainer = null;
   }
 
   /**
@@ -69,11 +76,12 @@ class ChatbotWidgetClass {
   }
 
   bindEvents() {
-    const { bubble, closeBtn, sendBtn, input, retryBtn, panel } = this.els;
+    const { bubble, closeBtn, sendBtn, input, retryBtn, panel, textTab, videoTab } = this.els;
 
     bubble.addEventListener('click', () => this.openChat());
     closeBtn.addEventListener('click', () => {
       panel.classList.remove('open');
+      this.closeAvatarStream();
     });
     sendBtn.addEventListener('click', () => this.handleSend());
     input.addEventListener('keydown', (e) => {
@@ -88,6 +96,14 @@ class ChatbotWidgetClass {
         this.sendUserMessage(this.pendingMessage);
       }
     });
+
+    // Tab switching
+    if (textTab) {
+      textTab.addEventListener('click', () => this.switchMode('text'));
+    }
+    if (videoTab) {
+      videoTab.addEventListener('click', () => this.switchMode('video'));
+    }
   }
 
   async openChat() {
@@ -199,6 +215,22 @@ class ChatbotWidgetClass {
       askUpload: Boolean(result.ask_upload),
       onUpload: result.ask_upload ? (file) => this.handleFileUpload(file) : undefined,
     });
+
+    // If in video mode, make avatar speak the response
+    if (this.currentMode === 'video' && this.avatar) {
+      if (this.avatar.isConnected) {
+        console.log('[Avatar] Queuing response for avatar to speak');
+        this.avatar.speak(result.response).catch((err) => {
+          console.warn('[Avatar] Speak error (non-critical):', err.message);
+        });
+      } else {
+        console.log('[Avatar] Avatar not connected, message will be queued');
+        // The avatar will process it once connected
+        this.avatar.speak(result.response).catch((err) => {
+          console.warn('[Avatar] Speak error (non-critical):', err.message);
+        });
+      }
+    }
   }
 
   async handleFileUpload(file) {
@@ -251,6 +283,164 @@ class ChatbotWidgetClass {
 
   hideError() {
     this.els.errorBanner.style.display = 'none';
+  }
+
+  /**
+   * Switch between text/video modes
+   */
+  switchMode(mode) {
+    const { textTab, videoTab, input, avatarSection } = this.els;
+
+    console.log(`[Chatbot] Switching to ${mode} mode`);
+
+    // Prevent switching during avatar initialization
+    if (mode === 'video' && this.avatar && !this.avatar.isConnected) {
+      console.log('[Chatbot] Avatar still connecting, please wait...');
+      return;
+    }
+
+    // Update active tab
+    [textTab, videoTab].forEach((btn) => btn?.classList.remove('active'));
+    if (mode === 'text') textTab?.classList.add('active');
+    if (mode === 'video') videoTab?.classList.add('active');
+
+    this.currentMode = mode;
+
+    // Update input placeholder
+    if (mode === 'text') {
+      input.placeholder = 'Type a message...';
+      // Hide avatar section in text mode
+      if (avatarSection) {
+        avatarSection.style.display = 'none';
+      }
+      this.hideError();
+    } else if (mode === 'video') {
+      input.placeholder = 'Chat with avatar...';
+      // Show avatar section
+      if (avatarSection) {
+        avatarSection.style.display = 'block';
+      }
+
+      // Initialize avatar on first use
+      if (!this.avatar) {
+        console.log('[Chatbot] First time in video mode, initializing avatar...');
+        this.initializeAvatar();
+      } else if (!this.avatar.isConnected) {
+        console.log('[Chatbot] Avatar connection lost, trying to reconnect...');
+        this.initializeAvatar();
+      }
+    }
+  }
+
+  /**
+   * Initialize avatar with WebRTC
+   */
+  async initializeAvatar() {
+    try {
+      if (!this.sessionId) {
+        this.showError('Session not initialized. Please refresh and try again.');
+        this.switchMode('text');
+        return;
+      }
+
+      console.log('[Avatar] Initializing WebRTC connection...');
+
+      // Create avatar container
+      this.createAvatarContainer();
+
+      // Create WebRTC client
+      this.avatar = new AvatarRTC({
+        sessionId: this.sessionId,
+        apiEndpoint: this.config.apiEndpoint,
+        videoElement: this.avatarContainer.querySelector('video'),
+      });
+
+      // Connect to D-ID with timeout
+      const connectTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Avatar connection timeout')), 35000)
+      );
+
+      try {
+        await Promise.race([this.avatar.connect(), connectTimeout]);
+        console.log('[Avatar] ✅ Connected successfully!');
+        this.avatarContainer.style.display = 'flex';
+      } catch (connectError) {
+        throw new Error(`Avatar connection failed: ${connectError.message}`);
+      }
+    } catch (error) {
+      console.error('[Avatar] ❌ Initialization failed:', error.message);
+
+      // Clean up failed avatar
+      if (this.avatar) {
+        try {
+          await this.avatar.disconnect();
+        } catch (err) {
+          console.warn('[Avatar] Cleanup error:', err.message);
+        }
+        this.avatar = null;
+      }
+
+      // Show user-friendly error and fall back to text mode
+      this.showError('Video mode unavailable. Switching to text chat...');
+      // Automatically switch to text mode after a short delay
+      setTimeout(() => {
+        this.switchMode('text');
+      }, 2000);
+    }
+  }
+
+  /**
+   * Create avatar container in dedicated avatar section
+   */
+  createAvatarContainer() {
+    if (this.avatarContainer) return;
+
+    const container = document.createElement('div');
+    container.className = 'avatar-container';
+
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.playsinline = true;
+    video.muted = false;
+    video.className = 'avatar-video';
+
+    // const statusLabel = document.createElement('div');
+    // statusLabel.className = 'avatar-label';
+    // statusLabel.textContent = 'Video Assistant';
+
+    // const statusDot = document.createElement('span');
+    // statusDot.className = 'avatar-status-dot';
+
+    container.appendChild(video);
+    // container.appendChild(statusLabel);
+    // container.appendChild(statusDot);
+
+    // Insert into dedicated avatar section
+    const avatarSection = this.els.avatarSection;
+    if (avatarSection) {
+      avatarSection.innerHTML = '';
+      avatarSection.appendChild(container);
+    }
+
+    this.avatarContainer = container;
+  }
+
+  /**
+   * Close avatar on panel close
+   */
+  async closeAvatarStream() {
+    try {
+      if (this.avatar) {
+        await this.avatar.disconnect();
+        this.avatar = null;
+      }
+
+      if (this.avatarContainer) {
+        this.avatarContainer.style.display = 'none';
+      }
+    } catch (error) {
+      console.warn('[Avatar] Close error:', error.message);
+    }
   }
 }
 

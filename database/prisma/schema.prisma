@@ -57,9 +57,15 @@ model ChatBot {
   // Scheduler delete targeting: focus session marker
   is_focus Boolean @default(false)
 
+  // Avatar/D-ID WebRTC stream tracking
+  did_stream_id  String?
+  did_session_id String?
+
   created_at DateTime @default(now())
   expires_at DateTime
-  chats      Chat[]
+  chats             Chat[]
+  avatar_streams    AvatarStream[] @relation("ChatBotAvatarStreams")
+  avatar_events     AvatarEvent[]
 
   @@index([email])
   @@index([created_at])
@@ -160,4 +166,42 @@ model TrainChatbotWithUrl {
   @@index([created_at])
   @@index([is_active])
   @@index([url])
+}
+
+// Avatar / D-ID WebRTC stream management
+model AvatarStream {
+  id             String   @id @default(uuid())
+  session_id     String
+  stream_id      String?  // D-ID stream ID
+  session_token  String?  // D-ID session ID
+  connection_signature String? // Client signature for validation
+  avatar_mode    String   @default("text") // text, video, audio
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  closed_at      DateTime?
+
+  chatbot ChatBot     @relation("ChatBotAvatarStreams", fields: [session_id], references: [session_id], onDelete: Cascade)
+  events  AvatarEvent[]
+
+  @@index([session_id])
+  @@index([stream_id])
+  @@index([is_active])
+}
+
+// Avatar connection/stream events tracking
+model AvatarEvent {
+  id             String   @id @default(uuid())
+  stream_id      String?  // Optional: not all events have a stream
+  session_id     String?
+  event_type     String   // stream_created, sdp_sent, ice_candidate, talk_sent, stream_closed, script_loaded, script_closed
+  event_data     String?  @db.Text // JSON payload
+  created_at     DateTime @default(now())
+
+  avatar_stream AvatarStream? @relation(fields: [stream_id], references: [id], onDelete: Cascade)
+  chatbot       ChatBot?      @relation(fields: [session_id], references: [session_id], onDelete: Cascade)
+
+  @@index([stream_id])
+  @@index([session_id])
+  @@index([event_type])
 }

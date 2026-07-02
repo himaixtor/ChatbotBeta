@@ -71,8 +71,8 @@
   flex-direction: column;
   width: 380px;
   max-width: calc(100vw - 40px);
-  height: 520px;
-  max-height: calc(100vh - 100px);
+  height: 600px;
+  max-height: calc(100vh - 80px);
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -118,6 +118,41 @@
   vertical-align: middle;
 }
 
+/* Tab Bar for Text/Video/Audio modes */
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border-color: var(--primary);
+}
+
+
 .close-btn {
   width: 32px;
   height: 32px;
@@ -138,13 +173,16 @@
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 18px;
+  overflow-x: hidden;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   background:
     radial-gradient(circle at top left, rgba(0, 140, 137, 0.06), transparent 16rem),
     var(--panel-bg);
+  min-height: 0;
+  scroll-behavior: smooth;
 }
 
 .msg {
@@ -413,6 +451,9 @@
   box-shadow: none;
 }
 
+/* Avatar Section Styles */
+
+
 .file-attachment {
   width: 100%;
   min-width: 180px;
@@ -542,6 +583,7 @@
   height: 100%;
   border: 0;
 }
+
 
 @media (max-width: 460px) {
   .widget-root.pos-br,
