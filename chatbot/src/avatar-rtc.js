@@ -168,7 +168,10 @@ export class AvatarRTC {
         body: JSON.stringify({
           stream_id: this.streamId,
           session_token: this.sessionToken,
-          answer: answer,
+          answer: {
+            type: answer.type,
+            sdp: answer.sdp,
+          },
         }),
       });
 
@@ -194,9 +197,11 @@ export class AvatarRTC {
         body: JSON.stringify({
           stream_id: this.streamId,
           session_token: this.sessionToken,
-          candidate: candidate.candidate,
-          sdpMid: candidate.sdpMid,
-          sdpMLineIndex: candidate.sdpMLineIndex,
+          candidate: {
+            candidate: candidate.candidate,
+            sdpMid: candidate.sdpMid,
+            sdpMLineIndex: candidate.sdpMLineIndex,
+          },
         }),
       });
     } catch (error) {

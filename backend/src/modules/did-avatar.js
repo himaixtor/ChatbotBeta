@@ -110,10 +110,16 @@ async function sendIceCandidate(streamId, sessionId, candidate) {
   try {
     const icePath = getStreamPath(streamId, 'ice');
     const url = DID_BASE_URL + icePath;
+
+    // Handle both formats: object with candidate.candidate property and direct candidate string
+    const candidateStr = typeof candidate === 'string' ? candidate : candidate.candidate;
+    const sdpMid = typeof candidate === 'string' ? null : candidate.sdpMid;
+    const sdpMLineIndex = typeof candidate === 'string' ? null : candidate.sdpMLineIndex;
+
     const data = {
-      candidate: candidate.candidate,
-      sdpMid: candidate.sdpMid,
-      sdpMLineIndex: candidate.sdpMLineIndex,
+      candidate: candidateStr,
+      sdpMid: sdpMid,
+      sdpMLineIndex: sdpMLineIndex,
       session_id: sessionId,
     };
     const config = getAxiosConfig();

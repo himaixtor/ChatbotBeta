@@ -401,7 +401,7 @@ class ChatbotWidgetClass {
     const video = document.createElement('video');
     video.autoplay = true;
     video.playsinline = true;
-    video.muted = false;
+    video.muted = true;
     video.className = 'avatar-video';
 
     // const statusLabel = document.createElement('div');
