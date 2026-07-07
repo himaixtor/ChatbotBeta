@@ -7,12 +7,22 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "node seed.js",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "sync": "node sync.js",
+    "sync:schema": "node sync.js --schema",
+    "sync:data": "node sync.js --data",
+    "sync:dry": "node sync.js --dry-run",
+    "sync:verbose": "node sync.js --verbose",
+    "validate": "node validate-setup.js",
+    "diagnose": "node diagnose-schema.js",
+    "test": "node test-sync.js",
+    "test:clean": "node test-sync.js --clean"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "prisma": "^5.22.0"
