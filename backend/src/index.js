@@ -16,6 +16,9 @@ const adminRoutes = require('./routes/adminRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const userRoutes = require('./routes/userRoutes');
 const schedulerRoutes = require('./routes/schedulerRoutes');
+const trainChatbotRoutes = require('./routes/trainChatbotRoutes');
+const trainChatbotUrlRoutes = require('./routes/trainChatbotUrlRoutes');
+const avatarRoutes = require('./routes/avatarRoutes');
 const { startSchedulerRunner } = require('./services/schedulerRunner');
 
 
@@ -111,6 +114,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/scheduler', schedulerRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/train-chatbot', trainChatbotRoutes);
+app.use('/api/train-chatbot-url', trainChatbotUrlRoutes);
+app.use('/api/avatar', avatarRoutes);
 
 
 app.use(errorHandler);

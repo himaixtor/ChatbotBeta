@@ -1,435 +1,559 @@
-# ✅ CAPTCHA & 2FA Implementation - COMPLETE
+# Chatbot System - Final Summary
 
-## What Was Implemented
-
-Your chatbot-admin login system now has enterprise-grade security with:
-
-### 1. **Google reCAPTCHA v3** 🤖
-- **Invisible bot protection** - No user interaction required
-- **Automatic risk assessment** - Analyzes user behavior
-- **Prevents:**
-  - Automated login attempts
-  - Credential stuffing attacks
-  - Brute force attacks
-
-### 2. **Two-Factor Authentication (TOTP)** 🔐
-- **Time-Based One-Time Passwords** - Industry standard
-- **Authenticator app support** - Works with 50+ apps
-- **Recovery codes** - 8 backup codes for account recovery
-- **Prevents:**
-  - Unauthorized access with stolen passwords
-  - Account compromise from credential leaks
+**Status:** ✅ Production Ready (v2.0 with D-ID Avatar Support)  
+**Last Updated:** 2026-07-07  
+**Comprehensive Guide:** See [COMPREHENSIVE_GUIDE.md](COMPREHENSIVE_GUIDE.md)
 
 ---
 
-## How It Works
+## 📚 Quick Navigation
 
-### Login Flow
-```
-User enters email/password
-        ↓
-reCAPTCHA verifies (automatic)
-        ↓
-Credentials checked
-        ↓
-If 2FA enabled → Show 2FA screen
-      ↓
-  User enters 6-digit code from authenticator
-      ↓
-  Code verified → Full access granted
-      ↓
-   Dashboard
-```
-
-### 2FA Setup
-```
-User goes to /setup-2fa
-      ↓
-Scan QR code with authenticator app
-      ↓
-Save 8 backup codes securely
-      ↓
-Enter verification code
-      ↓
-2FA enabled on account
-```
+- **Setup Guide:** [COMPREHENSIVE_GUIDE.md](COMPREHENSIVE_GUIDE.md)
+- **Previous Security Docs:** [FINAL_SUMMARY_OLD.md](#captcha--2fa-implementation)
+- **Quick Start:** Below ⬇️
 
 ---
 
-## Files Changed
+## 🚀 Quick Start
 
-### Backend ⚙️
-| File | Change | Details |
-|------|--------|---------|
-| `authController.js` | ✏️ Modified | Added CAPTCHA verification, 2FA setup/verify functions |
-| `authRoutes.js` | ✏️ Modified | Added 3 new 2FA endpoints |
-| `.env` | ✏️ Modified | Added `RECAPTCHA_SECRET_KEY` |
-| `package.json` | ✏️ Modified | Added `speakeasy` and `qrcode` |
+### Start Everything
 
-### Frontend 🎨
-| File | Change | Details |
-|------|--------|---------|
-| `Login.jsx` | ✏️ Modified | Added CAPTCHA widget and 2FA verification screen |
-| `App.jsx` | ✏️ Modified | Added `/setup-2fa` route |
-| `TwoFASetup.jsx` | ✨ New | Complete 2FA setup flow with QR code |
-| `.env` | ✏️ Modified | Added `VITE_RECAPTCHA_SITE_KEY` |
-| `package.json` | ✏️ Modified | Added `react-google-recaptcha` |
-
-### Database 🗄️
-| File | Change | Details |
-|------|--------|---------|
-| `schema.prisma` | ✏️ Modified | Added 3 new fields to User model |
-
-### Documentation 📚
-| File | Purpose |
-|------|---------|
-| `2FA_AND_CAPTCHA_SETUP.md` | Complete setup guide (900+ lines) |
-| `QUICK_START_2FA_CAPTCHA.md` | 5-minute quick start guide |
-| `IMPLEMENTATION_SUMMARY.md` | Technical implementation details |
-| `ARCHITECTURE_DIAGRAM.md` | System architecture with diagrams |
-| `DEPLOYMENT_CHECKLIST.md` | Pre/post deployment checklist |
-| `FINAL_SUMMARY.md` | This file! |
-
----
-
-## 🚀 Next Steps (Quick Start)
-
-### Step 1: Get reCAPTCHA Keys (2 min)
-```
-1. Go to: https://www.google.com/recaptcha/admin
-2. Click: + to create new site
-3. Fill: Label = "Chatbot Admin", Type = "reCAPTCHA v3"
-4. Copy: Site Key and Secret Key
-```
-
-### Step 2: Configure Keys (2 min)
-```
-backend/.env:
-  RECAPTCHA_SECRET_KEY=<paste_your_secret_key>
-
-chatbot-admin/.env:
-  VITE_RECAPTCHA_SITE_KEY=<paste_your_site_key>
-```
-
-### Step 3: Restart Apps (1 min)
 ```bash
-# Terminal 1
+# From project root
+npm run dev
+
+# This starts:
+# - Backend (port 5000)
+# - Admin Dashboard (port 5173)
+# - Widget watch build
+# - Widget test (port 8090)
+# All in background, persists if terminal closes
+```
+
+### Access Points
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Backend API** | http://localhost:5000 | N/A (no auth for /health) |
+| **Admin Dashboard** | http://localhost:5173 | admin@chatbot.com / Admin@123 |
+| **Widget Test** | http://localhost:8090 | N/A |
+| **Prisma Studio** | `cd database && npx prisma studio` | N/A |
+
+---
+
+## 📦 What Each Component Does
+
+### **1. Backend** (`backend/src/`) — Express REST API
+**Purpose:** Core business logic and data management
+
+**Key Responsibilities:**
+- 🔐 Authentication (login, JWT, 2FA, CAPTCHA)
+- 💬 Message routing (user → AI → database)
+- 🎭 Avatar management (D-ID WebRTC streams)
+- 📊 Admin dashboard API (stats, charts, users)
+- 🤖 AI training (documents, URLs)
+- ⏰ Job scheduling (automated cleanup)
+
+**Main Endpoints:**
+```
+POST   /api/auth/login              # Admin login
+POST   /api/session/create          # New chat session
+POST   /api/chat/message            # Send message
+GET    /api/admin/stats             # Dashboard stats
+POST   /api/avatar/create-stream    # D-ID WebRTC
+POST   /api/train-chatbot           # Train with docs
+```
+
+**Tech Stack:** Node.js + Express + Prisma + PostgreSQL
+
+---
+
+### **2. Chatbot Widget** (`chatbot/src/`) — Embeddable Chat Component
+**Purpose:** Customer-facing chat interface, works on any website
+
+**Key Features:**
+- 📱 Works on all devices (responsive)
+- 🎨 Fully customizable (colors, messages, position)
+- 🔇 No external dependencies (vanilla JS)
+- 🌐 Shadow DOM isolation (no style conflicts)
+- 🎭 Avatar support (D-ID WebRTC video chat)
+- 💾 Session persistence (cookies)
+
+**How to Embed:**
+```html
+<script src="https://cdn.example.com/chatbot.min.js"></script>
+<script>
+  ChatbotWidget.init({
+    apiEndpoint: 'https://api.example.com',
+    botName: 'Assistant',
+    welcomeMessage: 'Hi! How can I help?',
+    primaryColor: '#007AFF'
+  });
+</script>
+```
+
+**Building the Widget:**
+```bash
+cd chatbot
+npm install
+npm run build              # Outputs to dist/
+npm run watch            # Watch mode for development
+```
+
+---
+
+### **3. Chatbot Admin** (`chatbot-admin/src/`) — React Dashboard
+**Purpose:** Monitor chats, manage users, train AI, view analytics
+
+**Pages:**
+- 📊 **Dashboard** — Stats, charts, quick overview
+- 💬 **Chats** — Browse all sessions, view full history
+- 👥 **Users** — Create/edit/delete admin accounts
+- 🤖 **Train AI** — Upload documents, add URLs
+- ⏰ **Scheduler** — Manage automated cleanup jobs
+- 📈 **Token Usage** — Consumption analytics
+
+**Running:**
+```bash
+cd chatbot-admin
+npm install
+npm run dev              # Dev server on port 5173
+npm run build           # Production build
+```
+
+**Default Login:**
+- Email: `admin@chatbot.com`
+- Password: `Admin@123`
+
+---
+
+### **4. Widget Test** (`widget-test/`) — Testing Environment
+**Purpose:** Test embedded widget locally before production
+
+**What It Does:**
+- Opens a test page with widget embedded
+- Tests widget functionality
+- Tests avatar features
+- Tests custom styling
+
+**To Use:**
+```bash
+# 1. Start backend
 cd backend && npm run dev
 
-# Terminal 2
-cd chatbot-admin && npm run dev
-```
+# 2. Build widget
+cd chatbot && npm run build
 
-### Step 4: Test (1 min)
+# 3. Open in browser
+http://localhost:8090/widget-test
+# or file:///path/to/widget-test/index.html
 ```
-1. Go to: http://localhost:5173/login
-2. Try logging in - CAPTCHA appears
-3. Go to: http://localhost:5173/setup-2fa
-4. Set up 2FA on your account
-```
-
-**Done!** Your login is now protected. See `QUICK_START_2FA_CAPTCHA.md` for details.
 
 ---
 
-## 📊 What's New
+### **5. Database** (`database/prisma/`) — PostgreSQL + Prisma ORM
+**Purpose:** Persist all application data
 
-### New Endpoints
+**Main Models:**
+
+| Model | Purpose |
+|-------|---------|
+| **User** | Admin/manager/viewer accounts with 2FA |
+| **ChatBot** | Individual chat sessions |
+| **Chat** | Individual messages (user + AI responses) |
+| **AvatarStream** | D-ID WebRTC connection sessions |
+| **AvatarEvent** | Avatar connection events (logging) |
+| **Role** | Permission levels (admin, manager, viewer) |
+| **TrainChatbot** | Uploaded documents for AI training |
+| **TrainChatbotWithUrl** | URLs for AI training |
+| **SchedulerConfig** | Scheduled job definitions |
+| **SchedulerExecutionHistory** | Job execution logs |
+| **RefreshToken** | JWT token storage (secure) |
+
+**Quick Database Commands:**
+```bash
+cd database
+
+# Setup
+npx prisma migrate dev --name init
+npm run seed
+
+# View data
+npx prisma studio
+
+# Create migration (after schema changes)
+npx prisma migrate dev --name describe_change
+
+# Reset database (dev only!)
+npx prisma migrate reset
 ```
-POST /api/auth/setup-2fa
-  Setup 2FA: Returns QR code, secret, backup codes
 
-POST /api/auth/confirm-2fa
-  Enable 2FA: Stores secret after TOTP verification
+---
 
-POST /api/auth/verify-2fa
-  Login with 2FA: Verifies code or backup code
+## 🎭 D-ID Avatar Implementation
 
-(Updated) POST /api/auth/login
-  Now includes CAPTCHA verification
+### What is D-ID?
+
+D-ID provides **AI avatars that talk**. Users can:
+- See a video avatar speaking responses
+- Switch between text and video modes
+- Customize avatar appearance
+
+### How It Works
+
+```
+Frontend (avatar-rtc.js)
+  ├─ Loads D-ID SDK
+  ├─ Creates WebRTC connection
+  └─ Displays video stream
+
+Backend (did-avatar.js module)
+  ├─ Allocates session tokens
+  └─ Logs events to database
+
+D-ID API
+  └─ Provides video streaming + text-to-speech
 ```
 
-### Updated Login Endpoint
+### Configuration
+
+Get D-ID credentials:
+1. Sign up at https://www.d-id.com
+2. Create API key (clientKey)
+3. Create agent character (agentId)
+4. Add to config:
+
 ```javascript
-POST /api/auth/login
-Request:
-  {
-    email: "user@example.com",
-    password: "password",
-    captchaToken: "reCAPTCHA_token"
-  }
-
-Response (no 2FA):
-  {
-    accessToken: "jwt_token",
-    refreshToken: "jwt_token",
-    user: {...}
-  }
-
-Response (2FA enabled):
-  {
-    requires2FA: true,
-    tempToken: "temporary_jwt_token",
-    user: {uid, email, name}
-  }
+ChatbotWidget.init({
+  didClientKey: 'your_key',
+  didAgentId: 'your_agent_id'
+});
 ```
 
-### New User Fields
+### API Endpoints
+
 ```
-two_fa_enabled: Boolean     // Is 2FA active?
-two_fa_secret: String       // TOTP secret (base32)
-two_fa_backup_codes: String // Comma-separated codes
+POST /api/avatar/create-stream      # Initialize WebRTC
+POST /api/avatar/send-sdp           # Exchange SDP
+POST /api/avatar/send-ice           # Exchange ICE candidates
+POST /api/avatar/talk               # Make avatar speak
+GET  /api/avatar/stream/:streamId   # Check stream status
 ```
 
 ---
 
-## 🔒 Security Features
+## 🔐 Security Features
 
-### Authentication Layers
-1. **CAPTCHA** - Bot protection
-2. **Password** - Credential verification
-3. **2FA (optional)** - Second factor verification
-4. **JWT Tokens** - Session management
-5. **Account Lockout** - Brute force protection
+### Authentication
 
-### Security Best Practices Implemented
-✅ Google's reCAPTCHA for bot detection  
-✅ Bcrypt password hashing (12 rounds)  
-✅ TOTP with time window tolerance (±2)  
-✅ Single-use backup codes  
-✅ Account lockout after 5 failed attempts  
-✅ Temporary tokens for 2FA flow  
-✅ No secrets exposed in frontend  
-✅ HttpOnly secure cookies  
-✅ JWT token expiration (15 min access, 7 day refresh)  
+1. **Password** — Email + bcrypt-hashed password (12 rounds)
+2. **JWT Tokens** — Access (15 min) + Refresh (7 days)
+3. **Account Lockout** — After 5 failed attempts (15 min lockout)
+4. **Secure Cookies** — HttpOnly, Secure (production), SameSite
 
----
+### Login Flow
 
-## 📱 Supported Authenticator Apps
-
-Users can use any of these apps:
-- Google Authenticator
-- Microsoft Authenticator
-- Authy
-- LastPass Authenticator
-- 1Password
-- Bitwarden
-- FreeOTP
-- Any TOTP-compliant app
-
----
-
-## 💻 Technology Stack
-
-### Backend
-- **Express.js** - REST API
-- **speakeasy** - TOTP generation/verification
-- **qrcode** - QR code generation
-- **axios** - CAPTCHA verification API calls
-- **bcryptjs** - Password hashing
-- **jsonwebtoken** - JWT tokens
-- **Prisma** - ORM
-
-### Frontend
-- **React 18** - UI framework
-- **react-google-recaptcha** - CAPTCHA widget
-- **React Router** - Navigation
-- **Vite** - Build tool
-
-### Database
-- **PostgreSQL** - User & token storage
-- **Prisma** - Migration & ORM
-
-### External Services
-- **Google reCAPTCHA v3** - Bot protection API
-
----
-
-## 📖 Documentation
-
-### User Guides
-- **[QUICK_START_2FA_CAPTCHA.md](QUICK_START_2FA_CAPTCHA.md)** ⚡
-  - 5-minute setup guide
-  - Quick troubleshooting
-
-- **[2FA_AND_CAPTCHA_SETUP.md](2FA_AND_CAPTCHA_SETUP.md)** 📚
-  - Complete setup instructions
-  - API endpoint documentation
-  - Troubleshooting guide
-  - Architecture overview
-  - Environment variables reference
-
-### Developer Guides
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** 🔧
-  - Technical details of all changes
-  - Code review checklist
-  - Testing checklist
-
-- **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)** 🏗️
-  - System architecture diagrams
-  - Data flow diagrams
-  - Sequence diagrams
-  - Security layers visualization
-
-- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** ✅
-  - Pre-deployment checklist
-  - Deployment steps
-  - Post-deployment testing
-  - Monitoring setup
-  - Rollback plan
-
----
-
-## 🧪 Testing Checklist
-
-### Local Testing
-- ✅ CAPTCHA widget appears on login
-- ✅ CAPTCHA required to submit login
-- ✅ Can log in without 2FA enabled
-- ✅ Can access 2FA setup page
-- ✅ Can scan QR code with authenticator
-- ✅ Can enter TOTP code to verify
-- ✅ 2FA required on subsequent logins
-- ✅ Can use backup code as alternative
-- ✅ Account locks after 5 failed attempts
-
-### Before Production
-- [ ] Configured production reCAPTCHA keys
-- [ ] Tested with production domain
-- [ ] Database migration completed
-- [ ] HTTPS enabled
-- [ ] Monitoring set up
-- [ ] Admin 2FA enabled
-- [ ] Backup codes saved
-
-See **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** for complete checklist.
-
----
-
-## ⚠️ Important Notes
-
-### Configuration Required
-1. **reCAPTCHA Keys** - Must get from Google before deploying
-2. **Environment Variables** - Must be set in both backend and frontend
-3. **Database Migration** - Must run before deploying
-
-### Backward Compatibility
-✅ **Full backward compatibility** - Users without 2FA enabled can still log in normally with just CAPTCHA
-
-### Account Recovery
-- Users can use any saved backup code if they lose their authenticator
-- If all backup codes are used, admin can disable 2FA
-
-### Device Time
-- Authenticator app requires accurate device time (within 30 seconds)
-- Consider including time sync reminder in 2FA setup guide
-
----
-
-## 🆘 Support
-
-### For CAPTCHA Issues
-- **Check**: Domain in reCAPTCHA console matches your domain
-- **Check**: `VITE_RECAPTCHA_SITE_KEY` is correct in frontend
-- **Check**: `RECAPTCHA_SECRET_KEY` is correct in backend
-- **Reference**: [Google reCAPTCHA Docs](https://developers.google.com/recaptcha/docs/v3)
-
-### For 2FA Issues
-- **Check**: Device time is synchronized
-- **Check**: Codes expire every 30 seconds
-- **Fallback**: Use backup code instead
-- **Recovery**: Admin can disable 2FA if needed
-
-### For Deployment Issues
-- **See**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
-- **See**: [2FA_AND_CAPTCHA_SETUP.md](2FA_AND_CAPTCHA_SETUP.md)
-
----
-
-## 📊 Performance Impact
-
-### CAPTCHA Verification
-- **Latency**: ~100-500ms per request (Google API call)
-- **Caching**: No caching (real-time verification)
-- **Impact**: Minimal (happens once per login attempt)
-
-### 2FA Verification
-- **Latency**: ~10-50ms per request (local TOTP verification)
-- **Caching**: No caching (real-time code verification)
-- **Impact**: Negligible
-
-### Overall
-- **Login time**: Increased by ~200-600ms due to CAPTCHA + 2FA
-- **Database**: Minimal impact (~3 additional queries per login)
-- **Scalability**: No issues, verification is stateless
-
----
-
-## 🔄 Git Commit
-
-All changes committed with hash:
 ```
-f2bdc06 - Implement CAPTCHA and Two-Factor Authentication for admin login
+Email + Password
+  ↓
+Hash & compare password
+  ↓
+Check account lockout status
+  ↓
+Generate JWT tokens
+  ├─ accessToken (15 min)
+  └─ refreshToken (7 days)
+  ↓
+Return tokens to frontend
+  ↓
+Redirect to dashboard
 ```
 
-See commit message for detailed change list.
+---
+
+## 💬 How Messages Flow
+
+```
+1. User types message in widget
+   ↓
+2. Widget sends: POST /api/chat/message
+   ├─ sessionId, message, token
+   └─ Shows "typing..." indicator
+
+3. Backend receives
+   ├─ Validates JWT & session
+   ├─ Stores user message in Chat table
+   └─ Calls Python AI API
+
+4. Python AI responds
+   ├─ Returns text response
+   ├─ Counts tokens used
+   └─ Sends back to backend
+
+5. Backend stores response
+   ├─ Saves AI message in Chat table
+   └─ Returns JSON to widget
+
+6. Widget displays response
+   ├─ Removes "typing..." indicator
+   ├─ Shows AI message
+   └─ Triggers avatar.talk() if video enabled
+
+7. Admin views in dashboard
+   ├─ Logs in at /dashboard
+   ├─ Clicks "Chats" page
+   ├─ Searches by user email
+   └─ Views full message history
+```
 
 ---
 
-## ✨ What's Next?
+## 🛠️ Database Updates for Production
 
-1. **Immediate** (Today)
-   - [ ] Get reCAPTCHA keys
-   - [ ] Update environment variables
-   - [ ] Test locally
-   - [ ] Set up 2FA on your account
+### Backup Before Deploying
 
-2. **This Week**
-   - [ ] Test on staging environment
-   - [ ] Verify database migration
-   - [ ] Admin training
-   - [ ] Deploy to production
+```bash
+# Create backup
+pg_dump chatbot_db > backup_$(date +%Y%m%d_%H%M%S).sql
 
-3. **Ongoing**
-   - [ ] Monitor login metrics
-   - [ ] Review CAPTCHA analytics
-   - [ ] Help users enable 2FA
-   - [ ] Regular security audits
+# Verify size
+ls -lh backup_*.sql
+```
+
+### Deploy Schema Changes
+
+```bash
+# 1. Edit schema.prisma with changes
+
+# 2. Create migration
+cd database
+npx prisma migrate dev --name describe_your_change
+
+# 3. Review generated SQL
+cat prisma/migrations/*/migration.sql
+
+# 4. Test locally
+npm run dev
+
+# 5. Deploy to production
+ssh user@prod-server
+cd /app/database
+export DATABASE_URL="postgresql://..."
+npx prisma migrate deploy
+
+# 6. Verify
+npx prisma studio
+```
+
+### Rollback (If Issues)
+
+```bash
+# 1. Restore from backup
+psql chatbot_db < backup_timestamp.sql
+
+# 2. Revert code to previous commit
+git checkout HEAD~1
+
+# 3. Restart backend
+pm2 restart chatbot-backend
+
+# 4. Verify
+curl http://localhost:5000/health
+```
+
+### Common Migrations
+
+```bash
+# Add new column
+npx prisma migrate dev --name add_new_field
+
+# Create new model
+npx prisma migrate dev --name add_new_model
+
+# Change column type
+npx prisma migrate dev --name increase_field_size
+
+# Add unique constraint
+npx prisma migrate dev --name add_unique_constraint
+```
 
 ---
 
-## 📞 Questions?
+## 📋 Deployment Checklist
 
-Refer to:
-1. **Quick answers**: `QUICK_START_2FA_CAPTCHA.md`
-2. **Detailed setup**: `2FA_AND_CAPTCHA_SETUP.md`
-3. **Technical details**: `IMPLEMENTATION_SUMMARY.md`
-4. **Architecture**: `ARCHITECTURE_DIAGRAM.md`
-5. **Deployment**: `DEPLOYMENT_CHECKLIST.md`
+### Before Deployment
+
+- [ ] Code reviewed and merged
+- [ ] All tests passing
+- [ ] Database migrated locally
+- [ ] Environment variables set
+- [ ] Security audit done (no secrets in code)
+- [ ] Backup created
+- [ ] Rollback plan documented
+- [ ] Team notified
+
+### During Deployment
+
+- [ ] Stop services gracefully
+- [ ] Create fresh backup
+- [ ] Deploy code to servers
+- [ ] Run database migrations
+- [ ] Regenerate Prisma client
+- [ ] Start services
+- [ ] Run health checks
+- [ ] Monitor error logs
+- [ ] Test key features
+
+### After Deployment (24h)
+
+- [ ] Monitor error rates
+- [ ] Check database performance
+- [ ] Review metrics vs baseline
+- [ ] Collect user feedback
+- [ ] Document deployment notes
 
 ---
 
-## 🎉 Summary
+## ⚠️ Key Things to Remember
 
-**Status**: ✅ **COMPLETE AND READY FOR DEPLOYMENT**
+### Critical Files to Never Lose
 
-**You now have:**
-- ✅ Enterprise-grade CAPTCHA protection
-- ✅ Industry-standard 2FA with TOTP
-- ✅ Account recovery mechanisms
-- ✅ Comprehensive documentation
-- ✅ Complete deployment checklist
-- ✅ All dependencies installed
-- ✅ All code committed to git
+```
+database/prisma/schema.prisma     # Schema definition
+database/prisma/migrations/       # Migration history
+backend/.env                      # Secrets & config
+chatbot-admin/.env                # Frontend config
+```
 
-**Time to deploy**: < 1 hour
+### Environment Variables Needed
 
-**Difficulty level**: Easy (just configure environment variables)
+**Backend:**
+```env
+DATABASE_URL=postgresql://user:pass@host:5432/chatbot
+NODE_ENV=production
+PORT=5000
+JWT_SECRET=your_secret_key
+JWT_REFRESH_SECRET=another_secret
+PYTHON_AI_API_URL=http://ai-server:8010
+D_ID_API_KEY=your_d_id_key
+```
+
+**Admin Frontend:**
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+### Common Issues & Fixes
+
+| Issue | Fix |
+|-------|-----|
+| Backend won't start | Check NODE_ENV, DATABASE_URL, port 5000 in use |
+| Widget not appearing | Verify backend running, check browser console |
+| Can't login | Check admin user exists, CAPTCHA keys correct |
+| Slow messages | Check Python AI API, database indexes |
+| Database locked | Check for stuck transactions, restart PostgreSQL |
 
 ---
 
-**Implementation Date**: 2026-06-26  
-**Status**: ✅ Production Ready  
-**Next Action**: Get reCAPTCHA keys and configure environment variables
+## 📊 Architecture Overview
 
-Good luck! Your login system is now secure! 🔒
+```
+┌─────────────────────────────────────────┐
+│        User's Website                   │
+│  (Embedding chatbot widget)             │
+└──────────────┬──────────────────────────┘
+               │
+        chatbot.min.js
+               │
+    ┌──────────▼──────────┐
+    │  ChatBot Widget     │
+    │  ┌────────────────┐ │
+    │  │ Shadow DOM UI  │ │
+    │  │ Message Mgmt   │ │
+    │  │ Avatar Support │ │
+    │  └────────────────┘ │
+    └──────────┬──────────┘
+               │
+    HTTP + WebRTC
+               │
+    ┌──────────▼─────────────────────┐
+    │    Backend API (port 5000)      │
+    │  ┌─────────────────────────────┐│
+    │  │ Routes & Controllers         ││
+    │  │ - Auth & JWT                 ││
+    │  │ - Chat message handling      ││
+    │  │ - Avatar/D-ID streams        ││
+    │  │ - Admin dashboard APIs       ││
+    │  │ - Training & scheduling      ││
+    │  └─────────────────────────────┘│
+    │  ┌─────────────────────────────┐│
+    │  │ Middleware                   ││
+    │  │ - Authentication             ││
+    │  │ - Error handling             ││
+    │  │ - Rate limiting              ││
+    │  └─────────────────────────────┘│
+    └──────────┬──────────────────────┘
+               │
+       ┌───────┼────────┬──────────┐
+       │       │        │          │
+   Database  Python  D-ID API   External
+       │      AI API    │        Services
+       │       │        │
+    PostgreSQL │    WebRTC
+       │       │      Video
+       ▼       ▼        ▼
+   [Chats] [Responses][Avatar]
+   [Users]
+   [Sessions]
+   [Training]
+   [Jobs]
+
+┌────────────────────────────────────┐
+│  Admin Dashboard (port 5173)        │
+│  ┌────────────────────────────────┐│
+│  │ React Frontend                  ││
+│  │ - Login with 2FA                ││
+│  │ - Chat analytics                ││
+│  │ - User management               ││
+│  │ - Training management           ││
+│  │ - Job scheduling                ││
+│  └────────────────────────────────┘│
+└────────────────────────────────────┘
+```
+
+---
+
+## 🎯 Next Steps
+
+1. **Read Full Guide:** [COMPREHENSIVE_GUIDE.md](COMPREHENSIVE_GUIDE.md)
+2. **Deploy to Staging:** Test all features
+3. **Security Audit:** Review sensitive code
+4. **Load Testing:** Verify performance
+5. **Production Deployment:** Follow checklist above
+
+---
+
+## 📞 Support
+
+### Getting Help
+
+| Question | Reference |
+|----------|-----------|
+| **How do I...?** | [COMPREHENSIVE_GUIDE.md](COMPREHENSIVE_GUIDE.md) |
+| **Backend endpoints?** | [COMPREHENSIVE_GUIDE.md - API Reference](#backend---express-api) |
+| **Deploy database?** | [Database Updates for Production](#-database-updates-for-production) |
+| **Fix an issue?** | [Troubleshooting Guide](COMPREHENSIVE_GUIDE.md#troubleshooting-guide) |
+| **Architecture?** | [Architecture Overview](COMPREHENSIVE_GUIDE.md#system-architecture-diagram) |
+
+### File Locations
+
+- **Backend:** `backend/src/`
+- **Widget:** `chatbot/src/`
+- **Admin:** `chatbot-admin/src/`
+- **Database:** `database/prisma/schema.prisma`
+- **Tests:** `widget-test/`
+
+---
+
+**Status:** ✅ Production Ready  
+**Full Documentation:** See [COMPREHENSIVE_GUIDE.md](COMPREHENSIVE_GUIDE.md)

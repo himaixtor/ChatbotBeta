@@ -1,10 +1,15 @@
-import { Activity, Languages, MessageCircle, UserRoundCheck } from 'lucide-react';
+import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 import LanguagePie from '../components/LanguagePie';
 import DailyActivityChart from '../components/DailyActivityChart';
+import TokenUsageSummary from '../components/TokenUsageSummary';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
@@ -55,6 +60,16 @@ export default function Dashboard() {
           <div className="label">Leads captured ({leadPct}%)</div>
         </div>
         <div className="stat-card">
+          <FileText className="stat-icon" size={22} />
+          <div className="value">{data?.total_documents ?? 0}</div>
+          <div className="label">Ingested documents</div>
+        </div>
+        <div className="stat-card">
+          <LinkIcon className="stat-icon" size={22} />
+          <div className="value">{data?.total_urls ?? 0}</div>
+          <div className="label">Ingested URLs</div>
+        </div>
+        <div className="stat-card">
           <Languages className="stat-icon" size={22} />
           <div className="label" style={{ marginBottom: 8 }}>
             Language breakdown (chats)
@@ -75,6 +90,8 @@ export default function Dashboard() {
         </h2>
         <DailyActivityChart dailyStats={data?.daily_stats} />
       </div>
+
+      {isAdmin && <TokenUsageSummary />}
     </>
   );
 }

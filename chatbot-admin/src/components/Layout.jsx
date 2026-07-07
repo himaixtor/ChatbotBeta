@@ -5,6 +5,8 @@ import {
   LogOut,
   MessageSquareText,
   UsersRound,
+  Zap,
+  Gauge,
 } from "lucide-react";
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -14,7 +16,8 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const canManageUsers =
-    user?.permissions?.can_manage_users || user?.role === "admin";
+    user?.permissions?.can_manage_users || user?.role === "admin" || user?.role === "super_admin";
+  const isSuperAdmin = user?.role === "super_admin";
 
   return (
     <div className="app-layout">
@@ -41,6 +44,25 @@ export default function Layout() {
             <MessageSquareText size={18} />
             Chat History
           </NavLink>
+          
+          {isSuperAdmin && (
+            <NavLink
+              to="/train-ai"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Zap size={18} />
+              Train AI
+            </NavLink>
+          )}
+          {(isSuperAdmin || user?.role === "admin") && (
+            <NavLink
+              to="/token-usage"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Gauge size={18} />
+              Token Usage & Billing
+            </NavLink>
+          )}
           <NavLink
             to="/scheduler"
             className={({ isActive }) => (isActive ? "active" : "")}

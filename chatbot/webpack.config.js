@@ -16,6 +16,7 @@ class CopyCssPlugin {
 }
 
 module.exports = {
+  mode: 'production',
   entry: './src/chatbot.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -24,6 +25,7 @@ module.exports = {
     libraryTarget: 'umd',
     libraryExport: 'default',
     globalObject: 'this',
+    publicPath: 'auto',
     clean: { keep: /demo\.html$/ },
   },
   module: {
@@ -38,5 +40,7 @@ module.exports = {
   optimization: {
     minimize: true,
     minimizer: [new TerserPlugin()],
+    splitChunks: false,
+    runtimeChunk: false,
   },
 };
