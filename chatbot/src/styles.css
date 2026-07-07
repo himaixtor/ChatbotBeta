@@ -66,6 +66,11 @@
   box-shadow: 0 14px 30px rgba(0, 140, 137, 0.35);
 }
 
+.bubble {
+  position: relative;
+  z-index: 2147483646;
+}
+
 .panel {
   display: none;
   flex-direction: column;
@@ -586,16 +591,21 @@
 
 /* Avatar Section Styles */
 .avatar-section {
-  width: 30%;
-  height: 30%;
+  position: absolute;
+  top: -150px;
+  left: 0;
+  right: 0;
+  width: 50%;
+  height: 29%;
   background: linear-gradient(135deg, rgba(0, 140, 137, 0.08), rgba(209, 122, 68, 0.04));
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 12px;
-  margin: 0px 20%;
+  margin: 0 25%;
   overflow: hidden;
+  z-index: 1;
 }
 
 .avatar-container {

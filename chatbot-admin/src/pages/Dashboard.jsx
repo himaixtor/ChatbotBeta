@@ -1,10 +1,15 @@
 import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 import LanguagePie from '../components/LanguagePie';
 import DailyActivityChart from '../components/DailyActivityChart';
+import TokenUsageSummary from '../components/TokenUsageSummary';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
@@ -85,6 +90,8 @@ export default function Dashboard() {
         </h2>
         <DailyActivityChart dailyStats={data?.daily_stats} />
       </div>
+
+      {isAdmin && <TokenUsageSummary />}
     </>
   );
 }

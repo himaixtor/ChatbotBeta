@@ -8,9 +8,8 @@ export function createUI(shadow, config) {
 
   root.innerHTML = `
     <!-- Avatar Section (shown only in video mode) -->
-      <div class="avatar-section" id="avatar-section" style="display:none"></div>
-      <div class="panel" id="panel">
-    
+    <div class="avatar-section" id="avatar-section" style="display:none"></div>
+    <div class="panel" id="panel">
       <div class="panel-header">
         <span class="bot-avatar">A</span>
         <span id="bot-title"></span>
@@ -20,6 +19,7 @@ export function createUI(shadow, config) {
         <button type="button" class="tab-btn active" id="text-tab" data-mode="text">💬 Text</button>
         <button type="button" class="tab-btn" id="video-tab" data-mode="video">🎥 Video</button>
       </div>
+      
       <div class="error-banner" id="error-banner" style="display:none">
         <span id="error-text"></span>
         <button type="button" class="retry-btn" id="retry-btn">Retry</button>

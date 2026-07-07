@@ -8,6 +8,7 @@ import Chats from './pages/Chats';
 import UserManagement from './pages/UserManagement';
 import SchedulerJobs from './pages/SchedulerJobs';
 import TrainAI from './pages/TrainAI';
+import TokenUsage from './pages/TokenUsage';
 
 export default function App() {
 
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="users" element={<UserManagement />} />
             <Route path="scheduler" element={<SchedulerJobs />} />
             <Route path="train-ai" element={<TrainAI />} />
+            <Route path="token-usage" element={<TokenUsage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

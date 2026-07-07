@@ -6,6 +6,7 @@ import {
   MessageSquareText,
   UsersRound,
   Zap,
+  Gauge,
 } from "lucide-react";
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -43,13 +44,7 @@ export default function Layout() {
             <MessageSquareText size={18} />
             Chat History
           </NavLink>
-          <NavLink
-            to="/scheduler"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <Clock size={18} />
-            Scheduler
-          </NavLink>
+          
           {isSuperAdmin && (
             <NavLink
               to="/train-ai"
@@ -59,6 +54,22 @@ export default function Layout() {
               Train AI
             </NavLink>
           )}
+          {(isSuperAdmin || user?.role === "admin") && (
+            <NavLink
+              to="/token-usage"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Gauge size={18} />
+              Token Usage & Billing
+            </NavLink>
+          )}
+          <NavLink
+            to="/scheduler"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            <Clock size={18} />
+            Scheduler
+          </NavLink>
           {canManageUsers && (
             <NavLink
               to="/users"
