@@ -9,7 +9,7 @@ import { createAgentManager } from '@d-id/client-sdk';
 export class AvatarRTC {
   constructor(config) {
     this.sessionId = config.sessionId;
-    this.agentId = config.agentId || 'v2_agt_1jqzZB8J';
+    this.agentId = config.agentId || 'v2_agt_hOsF1A8R';
     this.clientKey = config.clientKey;
     this.videoElement = config.videoElement;
 
@@ -91,31 +91,47 @@ export class AvatarRTC {
 
       // Connect to D-ID
       console.log('%c[🔌 AVATAR SDK CONNECT] Calling agentManager.connect()...', 'color: blue');
-      await this.agentManager.connect();
+
+      // Add timeout for connection attempt (50s for remote with potential regional fallback)
+      const connectPromise = this.agentManager.connect();
+      const timeoutMs = 60000; // 60s timeout
+      const connectWithTimeout = Promise.race([
+        connectPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout - may be attempting regional fallback')), timeoutMs)
+        )
+      ]);
+
+      await connectWithTimeout;
 
       this.isConnected = true;
       console.log('%c[🔌 AVATAR SDK CONNECT] ✅ Connected to D-ID!', 'color: green; font-weight: bold');
+      console.log('%c[🔌 AVATAR SDK CONNECT] Connection may be on regional endpoint (this is OK for video)', 'color: green');
 
       return true;
     } catch (error) {
-      console.error('%c[🔌 AVATAR SDK CONNECT] ❌ Connection failed:', 'color: red; font-weight: bold', error.message);
-      console.error('%c[🔌 AVATAR SDK CONNECT] Error details:', 'color: red', error);
+      console.error(`%c[🔌 AVATAR SDK CONNECT] ❌ Connection failed (Attempt ${retryCount + 1}):`, 'color: red; font-weight: bold', error.message);
 
-      // Retry logic
-      if (retryCount < 2) {
-        console.log('%c[🔌 AVATAR SDK CONNECT] Retrying in 2s...', 'color: orange');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      // Retry logic - more aggressive for WebSocket errors
+      const isWebSocketError = error.message?.includes('websocket') || error.message?.includes('signal');
+
+      if (retryCount < 4) {
+        // Progressive backoff: 3s, 5s, 8s, 12s
+        const delayMs = [3000, 5000, 8000, 12000][retryCount] || 15000;
+        console.log(`%c[🔌 AVATAR SDK CONNECT] Retrying in ${delayMs}ms (attempt ${retryCount + 1}/5)...`, 'color: orange');
+        await new Promise(resolve => setTimeout(resolve, delayMs));
         return this.connect(retryCount + 1);
       }
 
+      console.error('%c[🔌 AVATAR SDK CONNECT] ❌ Connection failed after 5 attempts', 'color: red; font-weight: bold');
       throw error;
     }
   }
 
   /**
-   * Send text to avatar - it will speak
+   * Send text to avatar - it will speak (with aggressive retry for remote servers)
    */
-  async speak(text) {
+  async speak(text, retryCount = 0) {
     if (!text || text.trim().length === 0) {
       console.warn('%c[🗣️ AVATAR SPEAK] Empty text, skipping', 'color: orange');
       return;
@@ -129,14 +145,14 @@ export class AvatarRTC {
     }
 
     try {
-      if (this.isTalking) {
+      if (this.isTalking && retryCount === 0) {
         console.log('%c[🗣️ AVATAR SPEAK] Currently speaking, queuing message:', 'color: orange', text.substring(0, 50) + '...');
         this.messageQueue.push(text);
         return;
       }
 
       this.isTalking = true;
-      console.log('%c[🗣️ AVATAR SPEAK] Calling speak():', 'color: blue; font-weight: bold', text.substring(0, 60) + '...');
+      console.log(`%c[🗣️ AVATAR SPEAK] Calling speak() [Attempt ${retryCount + 1}]:`, 'color: blue; font-weight: bold', text.substring(0, 60) + '...');
 
       // SDK's speak method
       console.log('%c[🗣️ AVATAR SPEAK] Awaiting agentManager.speak()...', 'color: blue');
@@ -145,14 +161,64 @@ export class AvatarRTC {
         input: text,
       });
 
-      console.log('%c[🗣️ AVATAR SPEAK] ✅ speak() completed', 'color: green; font-weight: bold');
+      console.log('%c[🗣️ AVATAR SPEAK] ✅ speak() completed successfully!', 'color: green; font-weight: bold');
       console.log('%c[🗣️ AVATAR SPEAK] Result:', 'color: green', result);
 
       // Wait before processing queue
       await new Promise(resolve => setTimeout(resolve, 500));
+      return result;
     } catch (error) {
-      console.error('%c[🗣️ AVATAR SPEAK] ❌ Speak failed:', 'color: red; font-weight: bold', error.message);
+      console.error(`%c[🗣️ AVATAR SPEAK] ❌ Speak failed (Attempt ${retryCount + 1}):`, 'color: red; font-weight: bold', error.message);
+
+      // Check if it's a stream error (audio issue on regional endpoint)
+      const isStreamError =
+        error.message?.includes('Stream') ||
+        error.message?.includes('stream') ||
+        error.toString()?.includes('d:') ||
+        error.toString()?.includes('We:');
+
+      if (isStreamError) {
+        console.warn('%c[🗣️ AVATAR SPEAK] ⚠️ Audio stream error detected - likely regional endpoint issue', 'color: orange; font-weight: bold');
+
+        // Aggressive retry strategy for stream errors
+        if (retryCount === 0) {
+          console.log('%c[🗣️ AVATAR SPEAK] Waiting 8s for stream to initialize...', 'color: orange');
+          this.isTalking = false;
+          await new Promise(resolve => setTimeout(resolve, 8000));
+          return this.speak(text, retryCount + 1);
+        } else if (retryCount === 1) {
+          console.log('%c[🗣️ AVATAR SPEAK] Waiting 12s for stream recovery...', 'color: orange');
+          this.isTalking = false;
+          await new Promise(resolve => setTimeout(resolve, 12000));
+          return this.speak(text, retryCount + 1);
+        } else if (retryCount === 2) {
+          console.log('%c[🗣️ AVATAR SPEAK] Waiting 15s for deeper recovery...', 'color: orange');
+          this.isTalking = false;
+          await new Promise(resolve => setTimeout(resolve, 15000));
+          return this.speak(text, retryCount + 1);
+        } else if (retryCount === 3) {
+          console.log('%c[🗣️ AVATAR SPEAK] Final attempt: waiting 20s...', 'color: orange');
+          this.isTalking = false;
+          await new Promise(resolve => setTimeout(resolve, 20000));
+          return this.speak(text, retryCount + 1);
+        } else if (retryCount >= 4) {
+          console.error('%c[🗣️ AVATAR SPEAK] ❌ ALL RETRIES EXHAUSTED (5 attempts)', 'color: red; font-weight: bold');
+          console.error('%c[🗣️ AVATAR SPEAK] This appears to be a persistent audio/stream issue', 'color: red');
+          return null;
+        }
+      }
+
+      // For non-stream errors, do limited retries
+      if (retryCount < 2) {
+        const delayMs = 3000 + (retryCount * 2000);
+        console.log(`%c[🗣️ AVATAR SPEAK] Retrying in ${delayMs}ms...`, 'color: orange');
+        this.isTalking = false;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return this.speak(text, retryCount + 1);
+      }
+
       console.error('%c[🗣️ AVATAR SPEAK] Error details:', 'color: red', error);
+      return null;
     } finally {
       this.isTalking = false;
       this.processMessageQueue();

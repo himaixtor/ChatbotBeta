@@ -85,6 +85,8 @@
   overflow: hidden;
   margin-bottom: 12px;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .panel.open {
@@ -176,6 +178,7 @@
 }
 
 .messages {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -188,6 +191,7 @@
     var(--panel-bg);
   min-height: 0;
   scroll-behavior: smooth;
+  z-index: 2;
 }
 
 .msg {
@@ -675,5 +679,316 @@
 
   .bubble {
     margin-left: auto;
+  }
+}
+
+/* ==========================================
+   Weather themes & styles (Stationary Panel Backgrounds)
+   ========================================== */
+
+/* Make message board transparent to show panel's weather background */
+.panel.weather-sunny .messages,
+.panel.weather-cloudy .messages,
+.panel.weather-rainy .messages,
+.panel.weather-snowy .messages,
+.panel.weather-thunderstorm .messages,
+.panel.weather-spring .messages {
+  background: transparent;
+}
+
+/* 1. Weather Sunny Theme */
+.panel.weather-sunny {
+  background:
+    radial-gradient(circle at top right, rgba(251, 150, 20, 0.8), transparent 20rem),
+    radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.6), transparent 20rem),
+    #fef9e7;
+}
+.panel.weather-sunny::before {
+  content: "☀️";
+  position: absolute;
+  top: 70px;
+  right: 25px;
+  font-size: 3.5rem;
+  opacity: 0.25;
+  animation: sun-pulse 6s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-sunny::after {
+  content: "";
+  position: absolute;
+  top: 50px;
+  right: 5px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: sun-ray 10s infinite linear;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-sunny .msg.bot {
+  background: #ffffff;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.06);
+}
+
+/* 2. Weather Cloudy Theme */
+.panel.weather-cloudy {
+  background:
+    radial-gradient(circle at top right, rgba(100, 116, 139, 0.8), transparent 18rem),
+    radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.6), transparent 18rem),
+    #eceff1;
+}
+.panel.weather-cloudy::before {
+  content: "☁️";
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  font-size: 5.5rem;
+  opacity: 0.75;
+  animation: cloud-drift-left 12s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-cloudy::after {
+  content: "☁️";
+  position: absolute;
+  top: 140px;
+  right: 5px;
+  font-size: 4.5rem;
+  opacity: 0.7;
+  animation: cloud-drift-right 16s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-cloudy .msg.bot {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.05);
+}
+
+/* 3. Weather Rainy / Monsoon Theme - Weather Icon Style */
+.panel.weather-rainy {
+  background:
+    radial-gradient(circle at top right, rgba(0, 150, 170, 0.3), transparent 18rem),
+    radial-gradient(circle at bottom left, rgba(0, 100, 120, 0.25), transparent 18rem),
+    #f0fdfa;
+  position: relative;
+}
+
+/* Weather Icon - Cloud with Rain */
+.panel.weather-rainy::before {
+  content: "🌧️";
+  position: absolute;
+  top: 50px;
+  right: 30px;
+  font-size: 5rem;
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.panel.weather-rainy .messages {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.panel.weather-rainy .msg.bot {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 150, 170, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 150, 170, 0.08);
+}
+
+
+/* 4. Weather Snowy / Winter / Thand Theme */
+.panel.weather-snowy {
+  background:
+    radial-gradient(circle at top right, rgba(20, 150, 220, 0.8), transparent 18rem),
+    radial-gradient(circle at bottom left, rgba(100, 150, 200, 0.7), transparent 18rem),
+    #e3f2fd;
+}
+.panel.weather-snowy::before {
+  content: "❄️";
+  position: absolute;
+  top: 80px;
+  right: 30px;
+  font-size: 3.5rem;
+  opacity: 0.3;
+  animation: snow-spin 8s infinite linear;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-snowy::after {
+  content: "❄️";
+  position: absolute;
+  top: 150px;
+  left: 30px;
+  font-size: 2rem;
+  opacity: 0.25;
+  animation: snow-drift 12s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-snowy .msg.bot {
+  background: #ffffff;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.05);
+}
+
+/* 5. Weather Thunderstorm Theme */
+.panel.weather-thunderstorm {
+  background:
+    radial-gradient(circle at top right, rgba(120, 40, 200, 0.8), transparent 18rem),
+    radial-gradient(circle at bottom left, rgba(60, 20, 120, 0.65), transparent 18rem),
+    #f3e5f5;
+}
+.panel.weather-thunderstorm::before {
+  content: "⛈️";
+  position: absolute;
+  top: 90px;
+  right: 30px;
+  font-size: 3.5rem;
+  opacity: 0.3;
+  animation: storm-shake 4s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-thunderstorm::after {
+  content: "";
+  position: absolute;
+  top: 60px;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  opacity: 0;
+  animation: lightning-flash-anim 6s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-thunderstorm .msg.bot {
+  background: #ffffff;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.05);
+}
+
+/* 6. Weather Spring Theme */
+.panel.weather-spring {
+  background:
+    radial-gradient(circle at top right, rgba(220, 38, 38, 0.75), transparent 18rem),
+    radial-gradient(circle at bottom left, rgba(34, 150, 60, 0.65), transparent 18rem),
+    #f1f5f4;
+}
+.panel.weather-spring::before {
+  content: "🌸";
+  position: absolute;
+  top: 80px;
+  right: 30px;
+  font-size: 3.5rem;
+  opacity: 0.3;
+  animation: flower-spin 10s infinite linear;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-spring::after {
+  content: "🍃";
+  position: absolute;
+  top: 140px;
+  left: 35px;
+  font-size: 2rem;
+  opacity: 0.25;
+  animation: leaf-drift 10s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+.panel.weather-spring .msg.bot {
+  background: #ffffff;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.05);
+}
+
+/* Weather Keyframes */
+@keyframes sun-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.25; }
+  50% { transform: scale(1.15); opacity: 0.2; }
+}
+@keyframes sun-ray {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes cloud-drift-left {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(25px) translateY(-5px); }
+}
+@keyframes cloud-drift-right {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-20px) translateY(5px); }
+}
+@keyframes rain-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes rain-fall-anim {
+  0% { background-position: 0px 0px; }
+  100% { background-position: 20px 400px; }
+}
+@keyframes rain-fall-slow {
+  0% { background-position: 0px 0px; }
+  100% { background-position: 20px 160px; }
+}
+@keyframes snow-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes snow-drift {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(20px) translateY(10px); }
+}
+@keyframes storm-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(1px, 1px); }
+  50% { transform: translate(-1px, 0); }
+  75% { transform: translate(0, -1px); }
+}
+@keyframes lightning-flash-anim {
+  0%, 95%, 98%, 100% { opacity: 0; }
+  96%, 97% { opacity: 0.25; }
+}
+@keyframes flower-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes leaf-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(30px, 20px) rotate(25deg); }
+}
+
+/* Dynamic Weather Particles */
+.weather-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.raindrop {
+  position: absolute;
+  top: -25px;
+  width: 1.2px;
+  height: 22px;
+  background: linear-gradient(transparent, rgba(6, 182, 212, 0.75));
+  animation: raindrop-fall-anim linear forwards;
+}
+
+@keyframes raindrop-fall-anim {
+  0% {
+    transform: translateY(0) translateX(0);
+  }
+  100% {
+    transform: translateY(490px) translateX(-35px);
   }
 }

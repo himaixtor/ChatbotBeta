@@ -19,6 +19,7 @@ const schedulerRoutes = require('./routes/schedulerRoutes');
 const trainChatbotRoutes = require('./routes/trainChatbotRoutes');
 const trainChatbotUrlRoutes = require('./routes/trainChatbotUrlRoutes');
 const avatarRoutes = require('./routes/avatarRoutes');
+const weatherRoutes = require('./routes/weatherRoutes');
 const { startSchedulerRunner } = require('./services/schedulerRunner');
 
 
@@ -117,6 +118,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/train-chatbot', trainChatbotRoutes);
 app.use('/api/train-chatbot-url', trainChatbotUrlRoutes);
 app.use('/api/avatar', avatarRoutes);
+app.use('/api/weather', weatherRoutes);
 
 
 app.use(errorHandler);
