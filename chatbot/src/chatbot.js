@@ -44,6 +44,12 @@ class ChatbotWidgetClass {
     this.pendingMessage = null;
     this.welcomeShown = false;
 
+    // Weather & Location State
+    this.locationData = null;
+    this.weatherData = null;
+    this.weatherLoaded = false;
+    this.rainInterval = null;
+
     // Avatar state
     this.currentMode = 'text'; // 'text' or 'video'
     this.avatar = null;
@@ -69,7 +75,7 @@ class ChatbotWidgetClass {
       position: config.position || 'bottom-right',
       // D-ID SDK configuration
       didClientKey: config.didClientKey || null,
-      didAgentId: config.didAgentId || 'v2_agt_1jqzZB8J',
+      didAgentId: config.didAgentId || 'v2_agt_hOsF1A8R',
     };
 
     this.api = createApiClient(this.config.apiEndpoint);
@@ -85,6 +91,9 @@ class ChatbotWidgetClass {
 
     this.els = createUI(this.shadow, this.config);
     this.bindEvents();
+
+    // Fetch location and weather in background
+    this.fetchLocationAndWeather();
   }
 
   bindEvents() {
@@ -128,6 +137,22 @@ class ChatbotWidgetClass {
     if (videoTab) {
       videoTab.addEventListener('click', () => this.switchMode('video'));
     }
+
+    // Watch for manual class changes (for debugging/testing)
+    this.watchWeatherClassChanges(panel);
+  }
+
+  watchWeatherClassChanges(panel) {
+    const observer = new MutationObserver(() => {
+      const hasRainy = panel.classList.contains('weather-rainy');
+      if (hasRainy) {
+        this.startRainAnimation();
+      } else {
+        this.stopRainAnimation();
+      }
+    });
+
+    observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
   }
 
   async openChat() {
@@ -136,8 +161,18 @@ class ChatbotWidgetClass {
       await this.ensureSession();
     }
     if (!this.welcomeShown) {
-      appendMessage(this.els.messages, this.config.welcomeMessage, 'bot');
+      // If weather is still loading, wait up to 1.5 seconds for it
+      if (!this.weatherLoaded) {
+        let count = 0;
+        while (!this.weatherLoaded && count < 15) {
+          await new Promise((r) => setTimeout(r, 100));
+          count++;
+        }
+      }
+      const welcome = this.generateWelcomeMessage();
+      appendMessage(this.els.messages, welcome, 'bot');
       this.welcomeShown = true;
+      this.applyWeatherTheme();
     }
   }
 
@@ -173,12 +208,30 @@ class ChatbotWidgetClass {
       clearMessages(this.els.messages);
       if (messages?.length) {
         this.welcomeShown = true;
-        for (const m of messages) {
+
+        // Ensure location/weather is loaded so we can substitute the welcome message
+        if (!this.weatherLoaded) {
+          let count = 0;
+          while (!this.weatherLoaded && count < 15) {
+            await new Promise((r) => setTimeout(r, 100));
+            count++;
+          }
+        }
+
+        for (let i = 0; i < messages.length; i++) {
+          const m = messages[i];
           const type = m.response_type === 'user' ? 'user' : 'bot';
           const isFileUpload = Boolean(m.file_name);
+
+          let text = m.message_text;
+          // Intercept the default database welcome message and replace it with the dynamic one
+          if (i === 0 && type === 'bot' && text.includes('Kirloskar Solar')) {
+            text = this.generateWelcomeMessage();
+          }
+
           appendMessage(
             this.els.messages,
-            isFileUpload ? m.file_name : m.message_text,
+            isFileUpload ? m.file_name : text,
             type,
             isFileUpload
               ? {
@@ -190,8 +243,10 @@ class ChatbotWidgetClass {
               : {}
           );
         }
+        this.applyWeatherTheme();
       }
-    } catch {
+    } catch (err) {
+      console.warn('[loadHistory] failed, recreating session', err);
       await this.createNewSession();
     }
   }
@@ -226,8 +281,10 @@ class ChatbotWidgetClass {
       hideTyping(this.els.messages);
       if (err.status === 410) {
         await this.createNewSession();
-        appendMessage(this.els.messages, this.config.welcomeMessage, 'bot');
+        const welcome = this.generateWelcomeMessage();
+        appendMessage(this.els.messages, welcome, 'bot');
         this.welcomeShown = true;
+        this.applyWeatherTheme();
         return this.sendUserMessage(text);
       }
       this.showError('Failed to send message. Please try again.');
@@ -292,8 +349,10 @@ class ChatbotWidgetClass {
       hideTyping(this.els.messages);
       if (err.status === 410) {
         await this.createNewSession();
-        appendMessage(this.els.messages, this.config.welcomeMessage, 'bot');
+        const welcome = this.generateWelcomeMessage();
+        appendMessage(this.els.messages, welcome, 'bot');
         this.welcomeShown = true;
+        this.applyWeatherTheme();
         throw new Error('Session expired. Please try again.');
       }
       throw err;
@@ -402,7 +461,7 @@ class ChatbotWidgetClass {
 
         // Make avatar greet user when video mode is first activated
         console.log('%c[🎯 AVATAR INIT] Starting greeting...', 'color: darkgreen');
-        const greeting = this.config.welcomeMessage || "Hi I'm your avatar assistant!";
+        const greeting = this.generateWelcomeMessage();
         console.log('%c[🎯 AVATAR INIT] Greeting text:', 'color: darkgreen', greeting);
 
         await this.avatar.speak(greeting).catch((err) => {
@@ -492,14 +551,268 @@ class ChatbotWidgetClass {
       console.warn('[Avatar] Close error:', error.message);
     }
   }
+
+  async fetchLocationAndWeather() {
+    try {
+      const loc = await getUserLocation();
+      this.locationData = loc;
+      if (loc && loc.latitude && loc.longitude) {
+        const weather = await getWeather(loc.latitude, loc.longitude);
+        this.weatherData = weather;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch location/weather', e);
+    } finally {
+      this.weatherLoaded = true;
+      this.applyWeatherTheme();
+    }
+  }
+
+  getWeatherTheme() {
+    if (!this.weatherData) {
+      const month = new Date().getMonth();
+      if (month === 11 || month === 0 || month === 1) return 'snowy'; // Winter / Thand
+      if (month >= 2 && month <= 4) return 'spring'; // Spring
+      if (month >= 6 && month <= 8) return 'rainy'; // Monsoon
+      return 'sunny';
+    }
+
+    const code = this.weatherData.code;
+    const temp = this.weatherData.temp;
+    const month = new Date().getMonth();
+
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return 'rainy'; // Monsoon / Rainy
+    }
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+      return 'snowy'; // Thand / Snowy
+    }
+    if (code === 95 || code === 96 || code === 99) {
+      return 'thunderstorm'; // Thunderstorm
+    }
+    if (code === 2 || code === 3 || code === 45 || code === 48) {
+      return 'cloudy'; // Cloudy
+    }
+    if (temp < 15) {
+      return 'snowy'; // Thand / Cold
+    }
+    if (month >= 1 && month <= 3) {
+      return 'spring'; // Spring (Feb, Mar, Apr)
+    }
+    return 'sunny'; // Sunny
+  }
+
+  generateWelcomeMessage() {
+    const hours = new Date().getHours();
+    let timeGreeting = 'Hi';
+    let timeOfDay = 'day';
+    if (hours >= 5 && hours < 12) {
+      timeGreeting = 'Hi, Good Morning';
+      timeOfDay = 'morning';
+    } else if (hours >= 12 && hours < 17) {
+      timeGreeting = 'Hi, Good Afternoon';
+      timeOfDay = 'noon';
+    } else if (hours >= 17 && hours < 21) {
+      timeGreeting = 'Hi, Good Evening';
+      timeOfDay = 'evening';
+    } else {
+      timeGreeting = 'Hi, Good Night';
+      timeOfDay = 'night';
+    }
+
+    if (this.weatherData) {
+      const temp = Math.round(this.weatherData.temp);
+      const city = this.locationData?.city;
+      const locationStr = city ? `in ${city}` : 'where you are';
+      const theme = this.getWeatherTheme();
+
+      let weatherText = '';
+      if (theme === 'sunny') {
+        weatherText = `It's a beautiful sunny ${timeOfDay} ${locationStr} (around ${temp}°C). Perfect weather for solar energy! ☀️`;
+      } else if (theme === 'cloudy') {
+        weatherText = `It's a cloudy ${timeOfDay} ${locationStr} (around ${temp}°C). Don't worry, our solar panels still generate power on cloudy days! ☁️`;
+      } else if (theme === 'rainy') {
+        weatherText = `It's monsoon season and rainy ${locationStr} (around ${temp}°C). Stay warm and dry! 🌧️ Did you know solar systems benefit from rain washing off dust?`;
+      } else if (theme === 'snowy') {
+        weatherText = `It's cold and snowy ${locationStr} (around ${temp}°C). Stay warm! ❄️`;
+      } else if (theme === 'thunderstorm') {
+        weatherText = `There's a thunderstorm ${locationStr} (around ${temp}°C). Stay safe indoors! ⛈️`;
+      } else if (theme === 'spring') {
+        weatherText = `It's a beautiful spring ${timeOfDay} ${locationStr} (around ${temp}°C). A wonderful season to go solar! 🌸`;
+      } else {
+        weatherText = `It's currently clear ${locationStr} (around ${temp}°C).`;
+      }
+
+      return `${timeGreeting}, I'm Surya! Welcome to Kirloskar Solar. ${weatherText} How can I assist you today?`;
+    }
+
+    return `${timeGreeting}, I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?`;
+  }
+
+  applyWeatherTheme() {
+    if (!this.els?.panel) return;
+
+    // Remove existing weather classes from panel
+    this.els.panel.classList.remove(
+      'weather-sunny',
+      'weather-cloudy',
+      'weather-rainy',
+      'weather-snowy',
+      'weather-thunderstorm',
+      'weather-spring'
+    );
+
+    const theme = this.getWeatherTheme();
+    this.els.panel.classList.add(`weather-${theme}`);
+
+    // Start/stop rain animation based on theme
+    if (theme === 'rainy') {
+      this.startRainAnimation();
+    } else {
+      this.stopRainAnimation();
+    }
+  }
+
+  // Test method: force rainy theme for debugging
+  forceRainyTheme() {
+    if (!this.els?.panel) return;
+    this.els.panel.classList.remove('weather-sunny', 'weather-cloudy', 'weather-snowy', 'weather-thunderstorm', 'weather-spring');
+    this.els.panel.classList.add('weather-rainy');
+    this.startRainAnimation();
+  }
+
+  startRainAnimation() {
+    if (this.rainInterval) return; // Already running
+
+    if (!this.els?.weatherParticles) return;
+
+    this.els.weatherParticles.innerHTML = '';
+
+    const createRaindrop = () => {
+      const raindrop = document.createElement('div');
+      raindrop.className = 'raindrop';
+      raindrop.style.left = Math.random() * 100 + '%';
+      const duration = Math.random() * 1 + 0.8; // 0.8-1.8 seconds - faster
+      raindrop.style.animationDuration = duration + 's';
+      this.els.weatherParticles.appendChild(raindrop);
+
+      setTimeout(() => {
+        raindrop.remove();
+      }, duration * 1000);
+    };
+
+    // Create initial raindrops
+    for (let i = 0; i < 6; i++) {
+      setTimeout(() => createRaindrop(), i * 50);
+    }
+
+    // Keep creating new raindrops - more frequently
+    this.rainInterval = setInterval(createRaindrop, 80);
+  }
+
+  stopRainAnimation() {
+    if (this.rainInterval) {
+      clearInterval(this.rainInterval);
+      this.rainInterval = null;
+    }
+
+    if (this.els?.weatherParticles) {
+      this.els.weatherParticles.innerHTML = '';
+    }
+  }
+}
+
+async function getUserLocation() {
+  return new Promise((resolve) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            city: null
+          });
+        },
+        async () => {
+          const ipLoc = await fetchIpLocation();
+          resolve(ipLoc);
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      fetchIpLocation().then(resolve);
+    }
+  });
+}
+
+async function fetchIpLocation() {
+  try {
+    const res = await fetch('https://freeipapi.com/api/json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          city: data.cityName || null
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('IP geolocation failed, trying backup...', e);
+  }
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.latitude && data.longitude) {
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          city: data.city || null
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Backup IP geolocation failed', e);
+  }
+  // Default fallback: Pune, India
+  return {
+    latitude: 18.5204,
+    longitude: 73.8567,
+    city: 'Pune'
+  };
+}
+
+async function getWeather(latitude, longitude) {
+  try {
+    // Use backend proxy to avoid CORS issues
+    const backendUrl = 'http://localhost:5000/api/weather';
+    // const backendUrl = 'http://0.0.0.0:5000/api/weather';
+    const url = `${backendUrl}?latitude=${latitude}&longitude=${longitude}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Weather API returned error status');
+    const data = await res.json();
+    return {
+      temp: data.temp,
+      code: data.code
+    };
+  } catch (e) {
+    console.warn('Weather fetch failed', e);
+    return null;
+  }
 }
 
 const ChatbotWidget = new ChatbotWidgetClass();
 
 export default {
   init: (config) => ChatbotWidget.init(config),
+  forceRainyTheme: () => ChatbotWidget.forceRainyTheme(),
 };
 
 if (typeof window !== 'undefined') {
-  window.ChatbotWidget = { init: (config) => ChatbotWidget.init(config) };
+  window.ChatbotWidget = {
+    init: (config) => ChatbotWidget.init(config),
+    forceRainyTheme: () => ChatbotWidget.forceRainyTheme(),
+  };
 }

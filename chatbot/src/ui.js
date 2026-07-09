@@ -10,6 +10,7 @@ export function createUI(shadow, config) {
     <!-- Avatar Section (shown only in video mode) -->
     <div class="avatar-section" id="avatar-section" style="display:none"></div>
     <div class="panel" id="panel">
+      <div class="weather-particles" id="weather-particles"></div>
       <div class="panel-header">
         <span class="bot-avatar">A</span>
         <span id="bot-title"></span>
@@ -57,6 +58,7 @@ export function createUI(shadow, config) {
     textTab: shadow.getElementById('text-tab'),
     videoTab: shadow.getElementById('video-tab'),
     avatarSection: shadow.getElementById('avatar-section'),
+    weatherParticles: shadow.getElementById('weather-particles'),
   };
 
   els.botTitle.textContent = config.botName;
