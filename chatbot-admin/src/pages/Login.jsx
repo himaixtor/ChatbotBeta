@@ -94,7 +94,7 @@ export default function Login() {
           {/* <div className="captcha-container">
             <ReCAPTCHA
               ref={recaptchaRef}
-              sitekey="6LfIZEstAAAAAN1o9R7zVe9JexnCQhhhwA8Oc4_q"
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
             />
           </div>
           {captchaError && <p className="error-text">{captchaError}</p>} */}

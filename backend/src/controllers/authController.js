@@ -15,7 +15,7 @@ const { isValidEmail, requireFields } = require('../utils/validators');
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_MINUTES = 15;
 const BCRYPT_ROUNDS = 12;
-const RECAPTCHA_SECRET_KEY = '6LfIZEstAAAAADmYzvNIBfjtW3NVa5-M1vPCW5Jf';
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
 
 async function verifyCaptcha(captchaToken) {
