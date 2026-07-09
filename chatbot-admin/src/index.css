@@ -401,6 +401,16 @@ button {
   box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.15);
 }
 
+.captcha-container {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.captcha-container iframe {
+  max-width: 100%;
+}
+
 .btn {
   min-height: 42px;
   padding: 10px 16px;

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+// import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '../hooks/useAuth';
 import { isAuthenticated } from '../utils/auth';
 
@@ -9,8 +10,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  // const [captchaError, setCaptchaError] = useState('');
   const { login, loading } = useAuth();
   const navigate = useNavigate();
+  // const recaptchaRef = useRef();
 
   if (isAuthenticated()) {
     return <Navigate to="/dashboard" replace />;
@@ -19,11 +22,28 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    // setCaptchaError('');
+
+    // // Check if CAPTCHA is completed
+    // const captchaToken = recaptchaRef.current?.getValue();
+    // if (!captchaToken) {
+    //   setCaptchaError('Please complete the CAPTCHA verification');
+    //   return;
+    // }
+
     try {
-      await login(email, password);
+      // Pass captcha token to login function
+      await login(email, password); // captchaToken commented out
+      // recaptchaRef.current?.reset();
       navigate('/dashboard');
     } catch (err) {
+      // if (err.response?.data?.captchaError) {
+      //   setCaptchaError(err.response.data.captchaError);
+      // } else {
       setError(err.response?.data?.error || 'Invalid credentials');
+      // }
+      // Reset CAPTCHA on error
+      // recaptchaRef.current?.reset();
     }
   };
 
@@ -71,6 +91,13 @@ export default function Login() {
               </button>
             </div>
           </div>
+          {/* <div className="captcha-container">
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+            />
+          </div>
+          {captchaError && <p className="error-text">{captchaError}</p>} */}
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

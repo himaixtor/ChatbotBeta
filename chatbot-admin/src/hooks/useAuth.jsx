@@ -8,10 +8,11 @@ export function AuthProvider({ children }) {
   const [user, setUserState] = useState(getUser());
   const [loading, setLoading] = useState(false);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, captchaToken) => {
     setLoading(true);
     try {
-      const { data } = await api.post('/api/auth/login', { email, password });
+      // TODO: Enable captchaToken when CAPTCHA is uncommented
+      const { data } = await api.post('/api/auth/login', { email, password }); // captchaToken commented out
       setTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       setUserState(data.user);
