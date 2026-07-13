@@ -164,10 +164,6 @@ class LicenseService {
           created_by: createdByUser.email,
           created_by_email: createdByUser.email,
           license_version: '1.0',
-          machine_fingerprint: 'NOT_REQUIRED',
-          hardware_id: 'NOT_REQUIRED',
-          digital_signature: digitalSignature,
-          photo_path: null,
         },
       });
 
@@ -607,13 +603,16 @@ class LicenseService {
         clientName: licenseData.data.client_name,
         validFrom: licenseData.data.valid_from,
         validTill: newValidDate,
-        machineFingerprint: licenseData.data.machine_fingerprint,
+        machineFingerprint: 'NOT_REQUIRED',
       };
 
-      licenseData.data.digital_signature = EncryptionService.generateSignature(
+      const newDigitalSignature = EncryptionService.generateSignature(
         signatureData,
         signingKey
       );
+
+      // Update digital signature in license data for XML generation
+      licenseData.data.digital_signature = newDigitalSignature;
 
       // Generate new encrypted XML with salt
       const xmlData = LicenseXmlService.generateEncryptedLicense(

@@ -207,7 +207,7 @@ model AvatarEvent {
 }
 
 model License {
-  id                    String   @id @default(uuid())
+  id                    Int      @id @default(autoincrement())
   license_id            String   @unique
   client_name           String
   company_address       String?
@@ -231,12 +231,6 @@ model License {
   created_by            String
   created_by_email      String
   license_version       String
-
-  machine_fingerprint   String
-  hardware_id           String
-  digital_signature     String
-
-  photo_path            String?
 
   created_timestamp     DateTime @default(now())
   last_modified_timestamp DateTime @updatedAt
