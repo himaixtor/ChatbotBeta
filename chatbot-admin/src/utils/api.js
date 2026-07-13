@@ -37,6 +37,23 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // Handle license expired
+    if (error.response?.status === 403) {
+      const reason = error.response?.data?.reason;
+      if (reason === 'LICENSE_EXPIRED') {
+        // Dispatch custom event for license expiry
+        const licenseExpiredEvent = new CustomEvent('licenseExpired', {
+          detail: {
+            message: error.response?.data?.message,
+            tokenCostExceeded: error.response?.data?.tokenCostExceeded,
+          }
+        });
+        window.dispatchEvent(licenseExpiredEvent);
+        return Promise.reject(error);
+      }
+    }
+
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       const refreshToken = getRefreshToken();
