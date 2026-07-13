@@ -7,10 +7,12 @@ import {
   UsersRound,
   Zap,
   Gauge,
+  Shield,
 } from "lucide-react";
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import LicenseExpiredModal from "./LicenseExpiredModal";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -79,6 +81,15 @@ export default function Layout() {
               User Management
             </NavLink>
           )}
+          {isSuperAdmin && (
+            <NavLink
+              to="/license-management"
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <Shield size={18} />
+              License Management
+            </NavLink>
+          )}
         </nav>
 
         <div className="user-bar">
@@ -104,6 +115,7 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+      <LicenseExpiredModal />
     </div>
   );
 }

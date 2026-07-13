@@ -205,3 +205,41 @@ model AvatarEvent {
   @@index([session_id])
   @@index([event_type])
 }
+
+model License {
+  id                    Int      @id @default(autoincrement())
+  license_id            String   @unique
+  client_name           String
+  company_address       String?
+  company_contact       String?
+  company_email         String?
+  product_name          String
+  deployment_type       String
+  max_users             Int
+  max_admin_users       Int
+  max_token_usage_charge Float @default(0)
+  license_type          String
+  environment           String
+  remarks               String?
+  status                String   @default("ACTIVE")
+
+  valid_from            DateTime
+  valid_till            DateTime
+  created_date          DateTime @default(now())
+  assigned_date         DateTime @default(now())
+
+  created_by            String
+  created_by_email      String
+  license_version       String
+
+  created_timestamp     DateTime @default(now())
+  last_modified_timestamp DateTime @updatedAt
+
+  is_tampered           Boolean  @default(false)
+  tamper_detected_at    DateTime?
+
+  @@index([status])
+  @@index([valid_till])
+  @@index([created_by])
+  @@index([created_timestamp])
+}

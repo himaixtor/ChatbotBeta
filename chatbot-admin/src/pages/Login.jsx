@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 // import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuth } from '../hooks/useAuth';
 import { isAuthenticated } from '../utils/auth';
+import api from '../utils/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,9 +34,29 @@ export default function Login() {
 
     try {
       // Pass captcha token to login function
-      await login(email, password); // captchaToken commented out
+      const userData = await login(email, password); // captchaToken commented out
       // recaptchaRef.current?.reset();
-      navigate('/dashboard');
+
+      // Check license status
+      try {
+        const { data: licenseData } = await api.get('/api/license/check-activation');
+
+        // Check if user is Super Admin and license not activated
+        const isSuperAdmin = userData.user?.role === 'Super Admin' ||
+                             userData.user?.role === 'super_admin' ||
+                             userData.user?.role === 'SuperAdmin';
+
+        if (!licenseData.activated && isSuperAdmin) {
+          // Super Admin needs to activate license
+          navigate('/license-activation');
+        } else {
+          // Regular redirect to dashboard
+          navigate('/dashboard');
+        }
+      } catch (licenseErr) {
+        // If license check fails, go to dashboard anyway
+        navigate('/dashboard');
+      }
     } catch (err) {
       // if (err.response?.data?.captchaError) {
       //   setCaptchaError(err.response.data.captchaError);
