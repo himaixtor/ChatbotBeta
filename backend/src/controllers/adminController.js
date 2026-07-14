@@ -88,7 +88,7 @@ async function listChats(req, res, next) {
 
 async function getStats(req, res, next) {
   try {
-    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang, totalDocuments, totalUrls] =
+    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang, totalDocuments, totalUrls, activeLast24h, avgChatTimeRaw] =
       await Promise.all([
         prisma.chatBot.count(),
         prisma.chatBot.count({ where: { lead_generated: true } }),
@@ -117,6 +117,26 @@ async function getStats(req, res, next) {
         }),
         prisma.trainChatbot.count({ where: { is_active: true } }),
         prisma.trainChatbotWithUrl.count({ where: { is_active: true } }),
+        // Active chats in last 24 hours
+        prisma.chatBot.count({
+          where: {
+            created_at: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+              lte: new Date(),
+            },
+          },
+        }),
+        // Average chat time distribution for last 30 days
+        prisma.$queryRaw`
+          SELECT
+            EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int as hour,
+            COUNT(*)::int as count,
+            ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM "ChatBot" WHERE created_at >= NOW() - INTERVAL '30 days'), 2)::float as percentage
+          FROM "ChatBot"
+          WHERE created_at >= NOW() - INTERVAL '30 days'
+          GROUP BY EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')
+          ORDER BY hour ASC
+        `,
       ]);
 
     const language_breakdown = {};
@@ -140,6 +160,18 @@ async function getStats(req, res, next) {
       },
     }));
 
+    // Process average chat time distribution
+    const avgChatTime = avgChatTimeRaw.map((row) => ({
+      hour: Number(row.hour),
+      count: Number(row.count),
+      percentage: Number(row.percentage),
+    }));
+
+    // Find peak hour
+    const peakHour = avgChatTime.length > 0
+      ? avgChatTime.reduce((max, curr) => (curr.count > max.count ? curr : max)).hour
+      : null;
+
     res.json({
       total_chats: totalChats,
       leads_generated: leadsGenerated,
@@ -148,6 +180,19 @@ async function getStats(req, res, next) {
       language_breakdown,
       users_by_language,
       daily_stats,
+      dashboard_cards: {
+        active_chats_24h: {
+          count: activeLast24h,
+          label: 'Active Chats (Last 24h)',
+          period: '24 hours',
+        },
+        avg_chat_time: {
+          distribution: avgChatTime,
+          peak_hour: peakHour,
+          label: 'Average Chat Time',
+          period: 'Last 30 days',
+        },
+      },
     });
   } catch (error) {
     next(error);

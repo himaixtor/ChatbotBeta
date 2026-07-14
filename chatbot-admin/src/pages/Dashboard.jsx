@@ -1,10 +1,11 @@
-import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon } from 'lucide-react';
+import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
 import LanguagePie from '../components/LanguagePie';
 import DailyActivityChart from '../components/DailyActivityChart';
-import TokenUsageSummary from '../components/TokenUsageSummary';
+import ActiveChats24h from '../components/ActiveChats24h';
+import HourlyActivityChart from '../components/HourlyActivityChart';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -18,6 +19,29 @@ export default function Dashboard() {
     },
     refetchInterval: 5 * 60 * 1000,
   });
+
+  const { data: tokenData } = useQuery({
+    queryKey: ['token-usage-summary'],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get('http://172.16.1.67:8010/api/v1/admin/usage/summary', {
+          params: { period: 'daily' },
+        });
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch token usage:', error);
+        return null;
+      }
+    },
+    refetchInterval: 10 * 60 * 1000,
+  });
+
+  // Calculate LLM and Embedding costs
+  const llmData = tokenData?.by_vendor_model?.filter((v) => v.call_type === 'llm') || [];
+  const embeddingData = tokenData?.by_vendor_model?.filter((v) => v.call_type === 'embedding') || [];
+  const llmCost = llmData.reduce((sum, v) => sum + (v.cost_usd || 0), 0);
+  const embeddingCost = embeddingData.reduce((sum, v) => sum + (v.cost_usd || 0), 0);
+  const totalTokenCost = llmCost + embeddingCost;
 
   const leadPct =
     data?.total_chats > 0
@@ -69,6 +93,13 @@ export default function Dashboard() {
           <div className="value">{data?.total_urls ?? 0}</div>
           <div className="label">Ingested URLs</div>
         </div>
+        <ActiveChats24h count={data?.dashboard_cards?.active_chats_24h?.count} />
+        <div className="stat-card">
+          <DollarSign className="stat-icon" size={22} style={{ background: '#fef3c7', color: '#d97706' }} />
+          <div className="value" style={{ color: '#d97706' }}>${totalTokenCost.toFixed(2)}</div>
+          <div className="label">Token Usage Cost (Daily)</div>
+          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>LLM + Embedding</div>
+        </div>
         <div className="stat-card">
           <Languages className="stat-icon" size={22} />
           <div className="label" style={{ marginBottom: 8 }}>
@@ -91,7 +122,15 @@ export default function Dashboard() {
         <DailyActivityChart dailyStats={data?.daily_stats} />
       </div>
 
-      {canSeeTokenUsage && <TokenUsageSummary />}
+      <div className="chart-card">
+        <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>
+          <Activity size={18} /> Hourly patterns (last 30 days)
+        </h2>
+        <HourlyActivityChart
+          distribution={data?.dashboard_cards?.avg_chat_time?.distribution}
+          peakHour={data?.dashboard_cards?.avg_chat_time?.peak_hour}
+        />
+      </div>
     </>
   );
 }
