@@ -2,6 +2,7 @@
  * Role CRUD — admin only.
  */
 const prisma = require('../utils/prisma');
+const { PERMISSION_FIELDS } = require('../utils/permissions');
 
 async function listRoles(req, res, next) {
   try {
@@ -14,17 +15,20 @@ async function listRoles(req, res, next) {
 
 async function createRole(req, res, next) {
   try {
-    const { role_name, can_view_all_chats, can_download, can_manage_users } = req.body;
+    const { role_name } = req.body;
     if (!role_name) {
       return res.status(400).json({ error: 'role_name is required' });
+    }
+
+    const permissions = {};
+    for (const field of PERMISSION_FIELDS) {
+      permissions[field] = !!req.body[field];
     }
 
     const role = await prisma.role.create({
       data: {
         role_name: role_name.toLowerCase(),
-        can_view_all_chats: !!can_view_all_chats,
-        can_download: !!can_download,
-        can_manage_users: !!can_manage_users,
+        ...permissions,
       },
     });
     res.status(201).json(role);
@@ -39,16 +43,28 @@ async function createRole(req, res, next) {
 async function updateRole(req, res, next) {
   try {
     const { uid } = req.params;
-    const { can_view_all_chats, can_download, can_manage_users, role_name } = req.body;
+    const { role_name } = req.body;
+
+    const existing = await prisma.role.findUnique({ where: { uid } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Role not found' });
+    }
+    if (existing.role_name === req.user.role) {
+      return res.status(403).json({ error: "You cannot modify your own role's permissions" });
+    }
+
+    const data = {
+      ...(role_name !== undefined && { role_name: role_name.toLowerCase() }),
+    };
+    for (const field of PERMISSION_FIELDS) {
+      if (req.body[field] !== undefined) {
+        data[field] = !!req.body[field];
+      }
+    }
 
     const role = await prisma.role.update({
       where: { uid },
-      data: {
-        ...(role_name !== undefined && { role_name: role_name.toLowerCase() }),
-        ...(can_view_all_chats !== undefined && { can_view_all_chats }),
-        ...(can_download !== undefined && { can_download }),
-        ...(can_manage_users !== undefined && { can_manage_users }),
-      },
+      data,
     });
     res.json(role);
   } catch (error) {

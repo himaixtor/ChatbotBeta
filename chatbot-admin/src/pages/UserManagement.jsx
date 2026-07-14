@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit3, RefreshCw, Save, UserPlus } from 'lucide-react';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 
 const emptyForm = {
   uid: '',
@@ -13,10 +14,17 @@ const emptyForm = {
   is_active: true,
 };
 
+// Page-access + feature permissions — keys map to Role table columns
+// Order: Pages first, then Features
 const permissionLabels = {
+  can_access_dashboard: 'Dashboard',
   can_view_all_chats: 'Chat History',
-  can_download: 'Download CSV',
+  can_access_train_ai: 'Train AI',
+  can_access_token_usage: 'Token Usage & Billing',
+  can_access_scheduler: 'Scheduler',
   can_manage_users: 'User Management',
+  can_access_license_management: 'License Management',
+  can_download: 'Download CSV',
 };
 
 function getErrorMessage(error) {
@@ -24,6 +32,8 @@ function getErrorMessage(error) {
 }
 
 export default function UserManagement() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
   const queryClient = useQueryClient();
   const [form, setForm] = useState(emptyForm);
   const [roleDrafts, setRoleDrafts] = useState({});
@@ -48,7 +58,14 @@ export default function UserManagement() {
   const roles = rolesData?.data || [];
   const users = usersData?.data || [];
 
-  const roleOptions = useMemo(() => roles.map((role) => role.role_name), [roles]);
+  // Only super admin can assign super_admin or admin roles
+  const roleOptions = useMemo(
+    () =>
+      roles
+        .map((role) => role.role_name)
+        .filter((roleName) => isSuperAdmin || (roleName !== 'super_admin' && roleName !== 'admin')),
+    [roles, isSuperAdmin]
+  );
   const selectedRole = roles.find((role) => role.role_name === form.role);
 
   const saveUser = useMutation({
@@ -200,6 +217,12 @@ export default function UserManagement() {
                     {role}
                   </option>
                 ))}
+                {/* Keep current value visible (but not re-selectable) when editing restricted roles */}
+                {!isSuperAdmin && (form.role === 'super_admin' || form.role === 'admin') && (
+                  <option value={form.role} disabled>
+                    {form.role}
+                  </option>
+                )}
               </select>
             </div>
             <label className="check-row">
@@ -246,37 +269,47 @@ export default function UserManagement() {
               <tbody>
                 {rolesLoading && (
                   <tr>
-                    <td colSpan={5} className="empty-state">
+                    <td colSpan={Object.keys(permissionLabels).length + 2} className="empty-state">
                       Loading roles...
                     </td>
                   </tr>
                 )}
                 {!rolesLoading &&
-                  roles.map((role) => (
-                    <tr key={role.uid}>
-                      <td>{role.role_name}</td>
-                      {Object.keys(permissionLabels).map((key) => (
-                        <td key={key}>
-                          <input
-                            type="checkbox"
-                            checked={getRoleValue(role, key)}
-                            onChange={() => toggleRolePermission(role, key)}
-                          />
+                  roles.map((role) => {
+                    // Admin cannot edit admin or super_admin roles; only super_admin can edit all
+                    const isRestrictedRole = !isSuperAdmin && (role.role_name === 'admin' || role.role_name === 'super_admin');
+                    const disabledReason = isRestrictedRole
+                      ? 'Only Super Admin can modify admin/super_admin roles'
+                      : role.role_name === currentUser?.role
+                      ? 'You cannot modify your own role'
+                      : null;
+                    return (
+                      <tr key={role.uid}>
+                        <td>{role.role_name}</td>
+                        {Object.keys(permissionLabels).map((key) => (
+                          <td key={key}>
+                            <input
+                              type="checkbox"
+                              checked={getRoleValue(role, key)}
+                              disabled={isRestrictedRole || role.role_name === currentUser?.role}
+                              onChange={() => toggleRolePermission(role, key)}
+                            />
+                          </td>
+                        ))}
+                        <td>
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            title={disabledReason || 'Save role permissions'}
+                            disabled={isRestrictedRole || role.role_name === currentUser?.role || !roleDrafts[role.uid] || saveRole.isPending}
+                            onClick={() => persistRole(role)}
+                          >
+                            <Save size={18} />
+                          </button>
                         </td>
-                      ))}
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          title="Save role permissions"
-                          disabled={!roleDrafts[role.uid] || saveRole.isPending}
-                          onClick={() => persistRole(role)}
-                        >
-                          <Save size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>

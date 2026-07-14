@@ -1,7 +1,7 @@
 const express = require('express');
 const trainChatbotUrlController = require('../controllers/trainChatbotUrlController');
 const authenticate = require('../middleware/authenticate');
-const { requireRole } = require('../middleware/requireRole');
+const { requirePermission } = require('../middleware/requireRole');
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Protected endpoints below
 router.use(authenticate);
-router.use(requireRole('super_admin'));
+router.use(requirePermission('can_access_train_ai'));
 
 router.get('/', trainChatbotUrlController.listUrls);
 router.post('/ingest', trainChatbotUrlController.ingestUrls);

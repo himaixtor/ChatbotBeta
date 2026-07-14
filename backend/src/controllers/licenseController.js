@@ -4,9 +4,11 @@
  */
 const LicenseService = require('../services/licenseService');
 const prisma = require('../utils/prisma');
+const { loadRolePermissions } = require('../middleware/requireRole');
 
 /**
- * Check if user is Super Admin (handles multiple role formats)
+ * Check if user is Super Admin (handles multiple role formats).
+ * Kept hardcoded ONLY for the read-update-license-file debug endpoints.
  */
 function isSuperAdmin(userRole) {
   return userRole === 'Super Admin' ||
@@ -15,13 +17,20 @@ function isSuperAdmin(userRole) {
 }
 
 /**
+ * Dynamic page-access check for License Management (from Role table)
+ */
+async function hasLicenseManagementAccess(userRole) {
+  const role = await loadRolePermissions(userRole);
+  return !!(role && role.can_access_license_management);
+}
+
+/**
  * Create a new license (Super Admin only)
  */
 async function createLicense(req, res, next) {
   try {
-    // Verify Super Admin role
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can create licenses' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to create licenses' });
     }
 
     const {
@@ -105,8 +114,8 @@ async function createLicense(req, res, next) {
  */
 async function getLicenseDetails(req, res, next) {
   try {
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can view license details' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to view license details' });
     }
 
     const result = await LicenseService.getLicenseInfo();
@@ -145,8 +154,8 @@ async function getLicenseStatus(req, res, next) {
  */
 async function renewLicense(req, res, next) {
   try {
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can renew licenses' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to renew licenses' });
     }
 
     const { new_valid_till } = req.body;
@@ -185,8 +194,8 @@ async function renewLicense(req, res, next) {
  */
 async function updateLicense(req, res, next) {
   try {
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can update licenses' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to update licenses' });
     }
 
     const { id } = req.params;
@@ -226,8 +235,8 @@ async function updateLicense(req, res, next) {
  */
 async function downloadLicense(req, res, next) {
   try {
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can download license' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to download license' });
     }
 
     const fs = require('fs');
@@ -277,8 +286,8 @@ async function checkLicenseActivation(req, res, next) {
  */
 async function revokeLicense(req, res, next) {
   try {
-    if (!isSuperAdmin(req.user.role)) {
-      return res.status(403).json({ error: 'Only Super Admin can revoke licenses' });
+    if (!(await hasLicenseManagementAccess(req.user.role))) {
+      return res.status(403).json({ error: 'Insufficient permissions to revoke licenses' });
     }
 
     const { id } = req.params;

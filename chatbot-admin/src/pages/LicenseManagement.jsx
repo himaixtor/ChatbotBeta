@@ -15,17 +15,14 @@ export default function LicenseManagement() {
   const [renewDate, setRenewDate] = useState('');
   const [renewType, setRenewType] = useState('1year');
 
-  // Check if user is Super Admin (handle multiple role formats)
-  const isSuperAdmin = user?.role === 'Super Admin' ||
-                       user?.role === 'super_admin' ||
-                       user?.role === 'SuperAdmin' ||
-                       user?.role === 'Super_admin';
+  // Page access is driven by the Role table (can_access_license_management)
+  const hasAccess = !!user?.permissions?.can_access_license_management;
 
-  if (!isSuperAdmin) {
+  if (!hasAccess) {
     return (
       <div className="license-not-authorized">
         <h2>Access Denied</h2>
-        <p>Only Super Admin can access license management.</p>
+        <p>You do not have permission to access license management.</p>
       </div>
     );
   }

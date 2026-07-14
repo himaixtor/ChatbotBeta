@@ -1,17 +1,12 @@
 const express = require('express');
 const authenticate = require('../middleware/authenticate');
-const { requireRole } = require('../middleware/requireRole');
+const { requirePermission } = require('../middleware/requireRole');
 const schedulerController = require('../controllers/schedulerController');
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use((req, res, next) => {
-  if (req.user?.role === 'super_admin' || req.user?.role === 'admin') {
-    return next();
-  }
-  res.status(403).json({ error: 'Insufficient permissions' });
-});
+router.use(requirePermission('can_access_scheduler'));
 
 router.get('/jobs', schedulerController.listJobs);
 router.post('/jobs', schedulerController.createJob);
