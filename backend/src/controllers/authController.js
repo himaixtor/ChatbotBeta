@@ -11,6 +11,7 @@ const {
   hashToken,
 } = require('../utils/jwt');
 const { isValidEmail, requireFields } = require('../utils/validators');
+const { PERMISSION_FIELDS } = require('../utils/permissions');
 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_MINUTES = 15;
@@ -61,11 +62,11 @@ function setTokenCookies(res, accessToken, refreshToken) {
 async function getUserPermissions(roleName) {
   const role = await prisma.role.findUnique({ where: { role_name: roleName } });
   if (!role) return null;
-  return {
-    can_view_all_chats: role.can_view_all_chats,
-    can_download: role.can_download,
-    can_manage_users: role.can_manage_users,
-  };
+  const permissions = {};
+  for (const field of PERMISSION_FIELDS) {
+    permissions[field] = !!role[field];
+  }
+  return permissions;
 }
 
 async function register(req, res, next) {

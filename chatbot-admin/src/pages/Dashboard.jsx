@@ -8,7 +8,7 @@ import TokenUsageSummary from '../components/TokenUsageSummary';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const canSeeTokenUsage = !!user?.permissions?.can_access_token_usage;
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-stats'],
@@ -91,7 +91,7 @@ export default function Dashboard() {
         <DailyActivityChart dailyStats={data?.daily_stats} />
       </div>
 
-      {isAdmin && <TokenUsageSummary />}
+      {canSeeTokenUsage && <TokenUsageSummary />}
     </>
   );
 }

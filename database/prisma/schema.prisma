@@ -38,12 +38,17 @@ model RefreshToken {
 }
 
 model Role {
-  uid                String   @id @default(uuid())
-  role_name          String   @unique
-  can_view_all_chats Boolean  @default(false)
-  can_download       Boolean  @default(false)
-  can_manage_users   Boolean  @default(false)
-  created_at         DateTime @default(now())
+  uid                           String   @id @default(uuid())
+  role_name                     String   @unique
+  can_view_all_chats            Boolean  @default(false)
+  can_download                  Boolean  @default(false)
+  can_manage_users              Boolean  @default(false)
+  can_access_dashboard          Boolean  @default(false)
+  can_access_train_ai           Boolean  @default(false)
+  can_access_token_usage        Boolean  @default(false)
+  can_access_scheduler          Boolean  @default(false)
+  can_access_license_management Boolean  @default(false)
+  created_at                    DateTime @default(now())
 }
 
 model ChatBot {

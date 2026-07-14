@@ -28,7 +28,13 @@ async function assertRoleExists(role) {
 
 async function listUsers(req, res, next) {
   try {
+    // Non-super-admins can only see users who are not super_admin
+    const whereClause = req.user?.role === 'super_admin'
+      ? {}
+      : { role: { not: 'super_admin' } };
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       orderBy: { created_at: 'desc' },
       select: userSelect,
     });
@@ -63,6 +69,10 @@ async function createUser(req, res, next) {
     }
     if (!(await assertRoleExists(role))) {
       return res.status(400).json({ error: 'Invalid role' });
+    }
+    // Only super_admin can assign admin or super_admin roles
+    if ((role === 'super_admin' || role === 'admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can assign admin or super_admin roles' });
     }
 
     // Check license limits
@@ -132,6 +142,10 @@ async function updateUser(req, res, next) {
     }
     if (role !== undefined && !(await assertRoleExists(role))) {
       return res.status(400).json({ error: 'Invalid role' });
+    }
+    // Only super_admin can assign/update to admin or super_admin roles
+    if ((role === 'super_admin' || role === 'admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can assign admin or super_admin roles' });
     }
     if (uid === req.user.uid && is_active === false) {
       return res.status(400).json({ error: 'You cannot deactivate your own account' });

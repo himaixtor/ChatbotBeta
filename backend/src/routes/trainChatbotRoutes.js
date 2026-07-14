@@ -1,7 +1,7 @@
 const express = require('express');
 const trainChatbotController = require('../controllers/trainChatbotController');
 const authenticate = require('../middleware/authenticate');
-const { requireRole } = require('../middleware/requireRole');
+const { requirePermission } = require('../middleware/requireRole');
 const { uploadTraining } = require('../middleware/upload');
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get('/:documentId/view', trainChatbotController.getDocument);
 
 // Protected endpoints below
 router.use(authenticate);
-router.use(requireRole('super_admin'));
+router.use(requirePermission('can_access_train_ai'));
 
 router.get('/', trainChatbotController.listDocuments);
 router.post('/upload', (req, res, next) => {

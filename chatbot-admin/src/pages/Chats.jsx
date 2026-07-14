@@ -17,16 +17,12 @@ const LANG_COLORS = {
   Gujarati: '#fed7aa',
 };
 
-function canDownload(role) {
-  return role === 'admin' || role === 'manager';
-}
-
 function hasDownloadAccess(user) {
-  return user?.permissions?.can_download || canDownload(user?.role);
+  return !!user?.permissions?.can_download;
 }
 
-function canDelete(role) {
-  return role === 'admin';
+function hasDeleteAccess(user) {
+  return !!user?.permissions?.can_manage_users;
 }
 
 export default function Chats() {
@@ -293,7 +289,7 @@ export default function Chats() {
                         <Download size={18} />
                       </button>
                     )}
-                    {canDelete(user?.role) && (
+                    {hasDeleteAccess(user) && (
                       <button
                         type="button"
                         className="btn-icon"

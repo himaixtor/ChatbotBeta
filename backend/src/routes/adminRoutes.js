@@ -1,59 +1,43 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
 const authenticate = require('../middleware/authenticate');
-const { requireRole, requirePermission } = require('../middleware/requireRole');
+const { requirePermission } = require('../middleware/requireRole');
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use((req, res, next) => {
-  if (req.user?.role === 'super_admin') {
-    return next();
-  }
-  requirePermission('can_view_all_chats')(req, res, next);
-});
 
+// Dashboard page
+router.get('/stats', requirePermission('can_access_dashboard'), adminController.getStats);
 
-router.get('/chats', adminController.listChats);
-router.get('/stats', adminController.getStats);
+// Chat History page
+router.get('/chats', requirePermission('can_view_all_chats'), adminController.listChats);
 router.get(
   '/chats/:sessionId/messages',
+  requirePermission('can_view_all_chats'),
   adminController.getSessionMessages
 );
 router.get(
   '/chats/:sessionId/messages/:messageId/file',
+  requirePermission('can_view_all_chats'),
   adminController.getMessageAttachment
 );
 
 router.get(
   '/export/session/:sessionId',
-  (req, res, next) => {
-    if (req.user?.role === 'super_admin') {
-      return next();
-    }
-    requirePermission('can_download')(req, res, next);
-  },
+  requirePermission('can_download'),
   adminController.exportSession
 );
 router.get(
   '/export/all',
-  (req, res, next) => {
-    if (req.user?.role === 'super_admin') {
-      return next();
-    }
-    requirePermission('can_download')(req, res, next);
-  },
+  requirePermission('can_download'),
   adminController.exportAll
 );
 
+// Chat deletion is an administrative action — tied to the user-management permission
 router.delete(
   '/chats/:sessionId',
-  (req, res, next) => {
-    if (req.user?.role === 'super_admin' || req.user?.role === 'admin') {
-      return next();
-    }
-    res.status(403).json({ error: 'Insufficient permissions' });
-  },
+  requirePermission('can_manage_users'),
   adminController.deleteSession
 );
 
