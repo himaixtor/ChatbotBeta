@@ -275,41 +275,43 @@ export default function UserManagement() {
                   </tr>
                 )}
                 {!rolesLoading &&
-                  roles.map((role) => {
-                    // Admin cannot edit admin or super_admin roles; only super_admin can edit all
-                    const isRestrictedRole = !isSuperAdmin && (role.role_name === 'admin' || role.role_name === 'super_admin');
-                    const disabledReason = isRestrictedRole
-                      ? 'Only Super Admin can modify admin/super_admin roles'
-                      : role.role_name === currentUser?.role
-                      ? 'You cannot modify your own role'
-                      : null;
-                    return (
-                      <tr key={role.uid}>
-                        <td>{role.role_name}</td>
-                        {Object.keys(permissionLabels).map((key) => (
-                          <td key={key}>
-                            <input
-                              type="checkbox"
-                              checked={getRoleValue(role, key)}
-                              disabled={isRestrictedRole || role.role_name === currentUser?.role}
-                              onChange={() => toggleRolePermission(role, key)}
-                            />
+                  roles
+                    .filter((role) => isSuperAdmin || (role.role_name !== 'admin' && role.role_name !== 'super_admin'))
+                    .map((role) => {
+                      // Admin cannot edit admin or super_admin roles; only super_admin can edit all
+                      const isRestrictedRole = !isSuperAdmin && (role.role_name === 'admin' || role.role_name === 'super_admin');
+                      const disabledReason = isRestrictedRole
+                        ? 'Only Super Admin can modify admin/super_admin roles'
+                        : role.role_name === currentUser?.role
+                        ? 'You cannot modify your own role'
+                        : null;
+                      return (
+                        <tr key={role.uid}>
+                          <td>{role.role_name}</td>
+                          {Object.keys(permissionLabels).map((key) => (
+                            <td key={key}>
+                              <input
+                                type="checkbox"
+                                checked={getRoleValue(role, key)}
+                                disabled={isRestrictedRole || role.role_name === currentUser?.role}
+                                onChange={() => toggleRolePermission(role, key)}
+                              />
+                            </td>
+                          ))}
+                          <td>
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              title={disabledReason || 'Save role permissions'}
+                              disabled={isRestrictedRole || role.role_name === currentUser?.role || !roleDrafts[role.uid] || saveRole.isPending}
+                              onClick={() => persistRole(role)}
+                            >
+                              <Save size={18} />
+                            </button>
                           </td>
-                        ))}
-                        <td>
-                          <button
-                            type="button"
-                            className="btn-icon"
-                            title={disabledReason || 'Save role permissions'}
-                            disabled={isRestrictedRole || role.role_name === currentUser?.role || !roleDrafts[role.uid] || saveRole.isPending}
-                            onClick={() => persistRole(role)}
-                          >
-                            <Save size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        </tr>
+                      );
+                    })}
               </tbody>
             </table>
           </div>
@@ -344,24 +346,32 @@ export default function UserManagement() {
               </tr>
             )}
             {!usersLoading &&
-              users.map((user) => (
-                <tr key={user.uid}>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>
-                    <span className={`badge ${user.is_active ? 'badge-yes' : 'badge-no'}`}>
-                      {user.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>{user.contact_number || '-'}</td>
-                  <td>
-                    <button type="button" className="btn-icon" title="Modify user" onClick={() => startEdit(user)}>
-                      <Edit3 size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              users
+                .filter(
+                  (user) =>
+                    // Super admin sees all except themselves
+                    (isSuperAdmin && user.uid !== currentUser?.uid) ||
+                    // Admin sees only regular users (not admin/super_admin) and not themselves
+                    (!isSuperAdmin && user.role !== 'admin' && user.role !== 'super_admin' && user.uid !== currentUser?.uid)
+                )
+                .map((user) => (
+                  <tr key={user.uid}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.role}</td>
+                    <td>
+                      <span className={`badge ${user.is_active ? 'badge-yes' : 'badge-no'}`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>{user.contact_number || '-'}</td>
+                    <td>
+                      <button type="button" className="btn-icon" title="Modify user" onClick={() => startEdit(user)}>
+                        <Edit3 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>

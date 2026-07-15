@@ -95,8 +95,8 @@ export default function Dashboard() {
         </div>
         <ActiveChats24h count={data?.dashboard_cards?.active_chats_24h?.count} />
         <div className="stat-card">
-          <DollarSign className="stat-icon" size={22} style={{ background: '#fef3c7', color: '#d97706' }} />
-          <div className="value" style={{ color: '#d97706' }}>${totalTokenCost.toFixed(2)}</div>
+          <DollarSign className="stat-icon" size={22} />
+          <div className="value">${totalTokenCost.toFixed(2)}</div>
           <div className="label">Token Usage Cost (Daily)</div>
           <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem' }}>LLM + Embedding</div>
         </div>

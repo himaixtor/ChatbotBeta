@@ -747,14 +747,16 @@ async function getUserLocation() {
 
 async function fetchIpLocation() {
   try {
-    const res = await fetch('https://freeipapi.com/api/json');
+    // Get backend URL dynamically (same as admin panel)
+    const backendUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
+    const res = await fetch(`${backendUrl}/api/session/ip-location`);
     if (res.ok) {
       const data = await res.json();
       if (data.latitude && data.longitude) {
         return {
           latitude: data.latitude,
           longitude: data.longitude,
-          city: data.cityName || null
+          city: data.city || null
         };
       }
     }
