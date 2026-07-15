@@ -554,16 +554,26 @@ class ChatbotWidgetClass {
 
   async fetchLocationAndWeather() {
     try {
+      console.log('%c[🌦️ WEATHER] Starting location & weather fetch...', 'color: blue; font-weight: bold');
+
       const loc = await getUserLocation();
+      console.log('%c[🌦️ WEATHER] Location fetched:', 'color: blue', loc);
       this.locationData = loc;
+
       if (loc && loc.latitude && loc.longitude) {
+        console.log('%c[🌦️ WEATHER] Fetching weather for:', 'color: blue', `${loc.latitude}, ${loc.longitude}`);
         const weather = await getWeather(loc.latitude, loc.longitude);
+        console.log('%c[🌦️ WEATHER] Weather fetched:', 'color: blue', weather);
         this.weatherData = weather;
+      } else {
+        console.warn('%c[🌦️ WEATHER] ⚠️ Location missing coordinates', 'color: orange', loc);
       }
     } catch (e) {
-      console.warn('Failed to fetch location/weather', e);
+      console.error('%c[🌦️ WEATHER] ❌ Error fetching location/weather:', 'color: red; font-weight: bold', e);
     } finally {
       this.weatherLoaded = true;
+      console.log('%c[🌦️ WEATHER] Final state - Location:', 'color: green', this.locationData);
+      console.log('%c[🌦️ WEATHER] Final state - Weather:', 'color: green', this.weatherData);
       this.applyWeatherTheme();
     }
   }
@@ -577,29 +587,40 @@ class ChatbotWidgetClass {
       return 'sunny';
     }
 
-    const code = this.weatherData.code;
+    const condition = this.weatherData.condition?.toLowerCase() || '';
     const temp = this.weatherData.temp;
     const month = new Date().getMonth();
 
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-      return 'rainy'; // Monsoon / Rainy
+    console.log('%c[🎨 THEME] Weather condition:', 'color: teal', condition, 'Temp:', temp);
+
+    // OpenWeatherMap conditions mapping
+    if (condition.includes('rain') || condition.includes('drizzle')) {
+      console.log('%c[🎨 THEME] → Rainy theme selected', 'color: teal');
+      return 'rainy'; // Rainy / Monsoon
     }
-    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-      return 'snowy'; // Thand / Snowy
+    if (condition.includes('snow') || condition.includes('sleet')) {
+      console.log('%c[🎨 THEME] → Snowy theme selected', 'color: teal');
+      return 'snowy'; // Snowy / Cold
     }
-    if (code === 95 || code === 96 || code === 99) {
+    if (condition.includes('thunderstorm')) {
+      console.log('%c[🎨 THEME] → Thunderstorm theme selected', 'color: teal');
       return 'thunderstorm'; // Thunderstorm
     }
-    if (code === 2 || code === 3 || code === 45 || code === 48) {
+    if (condition.includes('cloud') || condition.includes('overcast') || condition.includes('mist') || condition.includes('fog')) {
+      console.log('%c[🎨 THEME] → Cloudy theme selected', 'color: teal');
       return 'cloudy'; // Cloudy
     }
     if (temp < 15) {
-      return 'snowy'; // Thand / Cold
+      console.log('%c[🎨 THEME] → Snowy theme selected (cold temp)', 'color: teal');
+      return 'snowy'; // Cold
     }
     if (month >= 1 && month <= 3) {
+      console.log('%c[🎨 THEME] → Spring theme selected', 'color: teal');
       return 'spring'; // Spring (Feb, Mar, Apr)
     }
-    return 'sunny'; // Sunny
+
+    console.log('%c[🎨 THEME] → Sunny theme selected (default)', 'color: teal');
+    return 'sunny'; // Sunny (default)
   }
 
   generateWelcomeMessage() {
@@ -724,22 +745,28 @@ class ChatbotWidgetClass {
 
 async function getUserLocation() {
   return new Promise((resolve) => {
+    console.log('%c[📍 LOCATION] Checking geolocation support...', 'color: purple');
     if (navigator.geolocation) {
+      console.log('%c[📍 LOCATION] Geolocation supported, requesting permission...', 'color: purple');
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('%c[📍 LOCATION] ✅ Browser geolocation granted:', 'color: green', position.coords);
           resolve({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             city: null
           });
         },
-        async () => {
+        async (error) => {
+          console.warn('%c[📍 LOCATION] ⚠️ Browser geolocation failed:', 'color: orange', error.message);
+          console.log('%c[📍 LOCATION] Falling back to IP-based location...', 'color: purple');
           const ipLoc = await fetchIpLocation();
           resolve(ipLoc);
         },
         { timeout: 5000 }
       );
     } else {
+      console.warn('%c[📍 LOCATION] ⚠️ Geolocation not supported, using IP-based location', 'color: orange');
       fetchIpLocation().then(resolve);
     }
   });
@@ -788,19 +815,29 @@ async function fetchIpLocation() {
 
 async function getWeather(latitude, longitude) {
   try {
-    // Use backend proxy to avoid CORS issues
+    // Use backend proxy to keep API key secure
     const backendUrl = 'http://localhost:5000/api/weather';
-    // const backendUrl = 'http://0.0.0.0:5000/api/weather';
     const url = `${backendUrl}?latitude=${latitude}&longitude=${longitude}`;
+    console.log('%c[🌡️ WEATHER API] Calling backend:', 'color: darkorange', url);
+
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Weather API returned error status');
+    console.log('%c[🌡️ WEATHER API] Response status:', 'color: darkorange', res.status);
+
+    if (!res.ok) {
+      throw new Error(`Weather API returned status ${res.status}`);
+    }
+
     const data = await res.json();
+    console.log('%c[🌡️ WEATHER API] ✅ Full response:', 'color: green', data);
+
     return {
       temp: data.temp,
-      code: data.code
+      condition: data.condition,
+      description: data.description,
+      city: data.city
     };
   } catch (e) {
-    console.warn('Weather fetch failed', e);
+    console.error('%c[🌡️ WEATHER API] ❌ Error:', 'color: red; font-weight: bold', e.message);
     return null;
   }
 }
