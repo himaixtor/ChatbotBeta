@@ -561,7 +561,7 @@ class ChatbotWidgetClass {
         this.weatherData = weather;
       }
     } catch (e) {
-      console.warn('Failed to fetch location/weather', e);
+      console.error('%c[🌦️ WEATHER] ❌ Error fetching location/weather:', 'color: red; font-weight: bold', e);
     } finally {
       this.weatherLoaded = true;
       this.applyWeatherTheme();
@@ -571,35 +571,35 @@ class ChatbotWidgetClass {
   getWeatherTheme() {
     if (!this.weatherData) {
       const month = new Date().getMonth();
-      if (month === 11 || month === 0 || month === 1) return 'snowy'; // Winter / Thand
-      if (month >= 2 && month <= 4) return 'spring'; // Spring
-      if (month >= 6 && month <= 8) return 'rainy'; // Monsoon
+      if (month === 11 || month === 0 || month === 1) return 'snowy';
+      if (month >= 2 && month <= 4) return 'spring';
+      if (month >= 6 && month <= 8) return 'rainy';
       return 'sunny';
     }
 
-    const code = this.weatherData.code;
+    const condition = this.weatherData.condition?.toLowerCase() || '';
     const temp = this.weatherData.temp;
     const month = new Date().getMonth();
 
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-      return 'rainy'; // Monsoon / Rainy
+    if (condition.includes('rain') || condition.includes('drizzle') || condition.includes('shower')) {
+      return 'rainy';
     }
-    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-      return 'snowy'; // Thand / Snowy
+    if (condition.includes('snow') || condition.includes('sleet') || condition.includes('blizzard')) {
+      return 'snowy';
     }
-    if (code === 95 || code === 96 || code === 99) {
-      return 'thunderstorm'; // Thunderstorm
+    if (condition.includes('thunderstorm') || condition.includes('thunder')) {
+      return 'thunderstorm';
     }
-    if (code === 2 || code === 3 || code === 45 || code === 48) {
-      return 'cloudy'; // Cloudy
+    if (condition.includes('cloud') || condition.includes('overcast') || condition.includes('mist') || condition.includes('fog') || condition.includes('haze')) {
+      return 'cloudy';
     }
     if (temp < 15) {
-      return 'snowy'; // Thand / Cold
+      return 'snowy';
     }
     if (month >= 1 && month <= 3) {
-      return 'spring'; // Spring (Feb, Mar, Apr)
+      return 'spring';
     }
-    return 'sunny'; // Sunny
+    return 'sunny';
   }
 
   generateWelcomeMessage() {
@@ -788,19 +788,20 @@ async function fetchIpLocation() {
 
 async function getWeather(latitude, longitude) {
   try {
-    // Use backend proxy to avoid CORS issues
     const backendUrl = 'http://localhost:5000/api/weather';
-    // const backendUrl = 'http://0.0.0.0:5000/api/weather';
     const url = `${backendUrl}?latitude=${latitude}&longitude=${longitude}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Weather API returned error status');
+    if (!res.ok) { 
+      throw new Error(`Weather API returned status ${res.status}`);
+    }
     const data = await res.json();
     return {
       temp: data.temp,
-      code: data.code
+      condition: data.condition,
+      description: data.description,
+      city: data.city
     };
   } catch (e) {
-    console.warn('Weather fetch failed', e);
     return null;
   }
 }
