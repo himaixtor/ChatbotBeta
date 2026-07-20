@@ -31,6 +31,9 @@ export function createUI(shadow, config) {
       <!-- Messages Container -->
       <div class="messages" id="messages"></div>
 
+      <!-- Quick Replies Container -->
+      <div class="quick-replies" id="quick-replies" style="display:none;"></div>
+
       <div class="input-area">
         <textarea id="input" rows="2" maxlength="500" placeholder="Type a message..."></textarea>
         <button type="button" class="send-btn" id="send-btn">Send</button>
@@ -48,6 +51,7 @@ export function createUI(shadow, config) {
     bubble: shadow.getElementById('bubble'),
     closeBtn: shadow.getElementById('close-btn'),
     messages: shadow.getElementById('messages'),
+    quickReplies: shadow.getElementById('quick-replies'),
     input: shadow.getElementById('input'),
     sendBtn: shadow.getElementById('send-btn'),
     errorBanner: shadow.getElementById('error-banner'),

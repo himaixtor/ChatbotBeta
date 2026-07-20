@@ -43,6 +43,7 @@ class ChatbotWidgetClass {
     this.els = null;
     this.pendingMessage = null;
     this.welcomeShown = false;
+    this.feedbackShown = false;
 
     // Weather & Location State
     this.locationData = null;
@@ -60,7 +61,7 @@ class ChatbotWidgetClass {
    * Initialize widget on the host page.
    * @param {Object} config
    */
-  init(config) {
+  async init(config) {
     if (!config?.apiEndpoint) {
       console.error('ChatbotWidget: apiEndpoint is required');
       return;
@@ -73,12 +74,18 @@ class ChatbotWidgetClass {
         config.welcomeMessage || "Hi I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?",
       primaryColor: config.primaryColor || '#008C89',
       position: config.position || 'bottom-right',
-      // D-ID SDK configuration
+      // D-ID SDK configuration (will be fetched from backend)
       didClientKey: config.didClientKey || null,
       didAgentId: config.didAgentId || 'v2_agt_hOsF1A8R',
     };
 
     this.api = createApiClient(this.config.apiEndpoint);
+
+    // Fetch D-ID client key from backend if not provided
+    if (!this.config.didClientKey) {
+      console.log('%c[🔑 AVATAR CONFIG] Fetching D-ID configuration from backend...', 'color: blue; font-weight: bold');
+      await this.fetchAvatarConfig();
+    }
 
     const host = document.createElement('div');
     host.id = 'chatbot-widget-host';
@@ -96,6 +103,39 @@ class ChatbotWidgetClass {
     this.fetchLocationAndWeather();
   }
 
+  /**
+   * Fetch D-ID avatar configuration from backend
+   */
+  async fetchAvatarConfig() {
+    try {
+      const backendUrl = this.config.apiEndpoint;
+      const url = `${backendUrl}/api/session/avatar-config`;
+      console.log('%c[🔑 AVATAR CONFIG] Request URL:', 'color: blue', url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn('%c[🔑 AVATAR CONFIG] Response status:', 'color: orange', response.status);
+        throw new Error(`Avatar config returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('%c[🔑 AVATAR CONFIG] ✅ Fetched successfully', 'color: green; font-weight: bold');
+      console.log('%c[🔑 AVATAR CONFIG] Agent ID:', 'color: green', data.agentId);
+
+      if (data.clientKey) {
+        this.config.didClientKey = data.clientKey;
+        console.log('%c[🔑 AVATAR CONFIG] Client Key loaded:', 'color: green', data.clientKey.substring(0, 15) + '...');
+      }
+
+      if (data.agentId) {
+        this.config.didAgentId = data.agentId;
+      }
+    } catch (error) {
+      console.error('%c[🔑 AVATAR CONFIG] ❌ Failed to fetch:', 'color: red; font-weight: bold', error.message);
+      console.warn('%c[🔑 AVATAR CONFIG] Avatar features will be unavailable', 'color: orange');
+    }
+  }
+
   bindEvents() {
     const { bubble, closeBtn, sendBtn, input, retryBtn, panel, textTab, videoTab } = this.els;
 
@@ -111,10 +151,16 @@ class ChatbotWidgetClass {
       }
     });
 
-    // Close button: close panel and cleanup
+    // Close button: show feedback on first click, close on second click or if feedback shown
     closeBtn.addEventListener('click', () => {
-      panel.classList.remove('open');
-      this.closeAvatarStream();
+      if (this.feedbackShown) {
+        // If feedback already shown, close the chat
+        this.closeChatNow();
+      } else {
+        // Show feedback on first close attempt
+        this.showFeedback();
+        this.feedbackShown = true;
+      }
     });
     sendBtn.addEventListener('click', () => this.handleSend());
     input.addEventListener('keydown', (e) => {
@@ -161,16 +207,9 @@ class ChatbotWidgetClass {
       await this.ensureSession();
     }
     if (!this.welcomeShown) {
-      // If weather is still loading, wait up to 1.5 seconds for it
-      if (!this.weatherLoaded) {
-        let count = 0;
-        while (!this.weatherLoaded && count < 15) {
-          await new Promise((r) => setTimeout(r, 100));
-          count++;
-        }
-      }
       const welcome = this.generateWelcomeMessage();
       appendMessage(this.els.messages, welcome, 'bot');
+      this.showQuickReplies();
       this.welcomeShown = true;
       this.applyWeatherTheme();
     }
@@ -200,12 +239,16 @@ class ChatbotWidgetClass {
     setCookie(COOKIE_NAME, session_id, COOKIE_MAX_AGE);
     clearMessages(this.els.messages);
     this.welcomeShown = false;
+    this.feedbackShown = false;
   }
 
   async loadHistory() {
     try {
       const { messages } = await this.api.getHistory(this.sessionId);
       clearMessages(this.els.messages);
+      this.els.quickReplies.innerHTML = '';
+      this.els.quickReplies.style.display = 'none';
+
       if (messages?.length) {
         this.welcomeShown = true;
 
@@ -243,6 +286,9 @@ class ChatbotWidgetClass {
               : {}
           );
         }
+
+        // Show quick replies after loading history
+        this.showQuickReplies();
         this.applyWeatherTheme();
       }
     } catch (err) {
@@ -257,6 +303,9 @@ class ChatbotWidgetClass {
 
     this.els.input.value = '';
     this.els.sendBtn.disabled = true;
+
+    // Hide quick replies when user sends a message
+    this.els.quickReplies.style.display = 'none';
 
     if (!this.sessionId) {
       await this.ensureSession();
@@ -296,6 +345,9 @@ class ChatbotWidgetClass {
       askUpload: Boolean(result.ask_upload),
       onUpload: result.ask_upload ? (file) => this.handleFileUpload(file) : undefined,
     });
+
+    // Show quick replies after each bot message
+    this.showQuickReplies();
 
     // If in video mode, make avatar speak the response
     if (this.currentMode === 'video' && this.avatar) {
@@ -605,48 +657,17 @@ class ChatbotWidgetClass {
   generateWelcomeMessage() {
     const hours = new Date().getHours();
     let timeGreeting = 'Hi';
-    let timeOfDay = 'day';
     if (hours >= 5 && hours < 12) {
-      timeGreeting = 'Hi, Good Morning';
-      timeOfDay = 'morning';
+      timeGreeting = 'Good Morning';
     } else if (hours >= 12 && hours < 17) {
-      timeGreeting = 'Hi, Good Afternoon';
-      timeOfDay = 'noon';
+      timeGreeting = 'Good Afternoon';
     } else if (hours >= 17 && hours < 21) {
-      timeGreeting = 'Hi, Good Evening';
-      timeOfDay = 'evening';
+      timeGreeting = 'Good Evening';
     } else {
-      timeGreeting = 'Hi, Good Night';
-      timeOfDay = 'night';
+      timeGreeting = 'Good Night';
     }
 
-    if (this.weatherData) {
-      const temp = Math.round(this.weatherData.temp);
-      const city = this.locationData?.city;
-      const locationStr = city ? `in ${city}` : 'where you are';
-      const theme = this.getWeatherTheme();
-
-      let weatherText = '';
-      if (theme === 'sunny') {
-        weatherText = `It's a beautiful sunny ${timeOfDay} ${locationStr} (around ${temp}°C). Perfect weather for solar energy! ☀️`;
-      } else if (theme === 'cloudy') {
-        weatherText = `It's a cloudy ${timeOfDay} ${locationStr} (around ${temp}°C). Don't worry, our solar panels still generate power on cloudy days! ☁️`;
-      } else if (theme === 'rainy') {
-        weatherText = `It's monsoon season and rainy ${locationStr} (around ${temp}°C). Stay warm and dry! 🌧️ Did you know solar systems benefit from rain washing off dust?`;
-      } else if (theme === 'snowy') {
-        weatherText = `It's cold and snowy ${locationStr} (around ${temp}°C). Stay warm! ❄️`;
-      } else if (theme === 'thunderstorm') {
-        weatherText = `There's a thunderstorm ${locationStr} (around ${temp}°C). Stay safe indoors! ⛈️`;
-      } else if (theme === 'spring') {
-        weatherText = `It's a beautiful spring ${timeOfDay} ${locationStr} (around ${temp}°C). A wonderful season to go solar! 🌸`;
-      } else {
-        weatherText = `It's currently clear ${locationStr} (around ${temp}°C).`;
-      }
-
-      return `${timeGreeting}, I'm Surya! Welcome to Kirloskar Solar. ${weatherText} How can I assist you today?`;
-    }
-
-    return `${timeGreeting}, I'm Surya! Welcome to Kirloskar Solar. How can I assist you today?`;
+    return `${timeGreeting}! I'm Surya from Kirloskar Solar. How can I help?`;
   }
 
   applyWeatherTheme() {
@@ -718,6 +739,95 @@ class ChatbotWidgetClass {
 
     if (this.els?.weatherParticles) {
       this.els.weatherParticles.innerHTML = '';
+    }
+  }
+
+  showQuickReplies() {
+    const container = this.els.quickReplies;
+    const quickReplies = [
+      'What is solar energy?',
+      'How much does a solar system cost?',
+      'What are the benefits of solar?'
+    ];
+
+    container.innerHTML = '';
+    quickReplies.forEach((reply) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'quick-reply-btn';
+      btn.textContent = reply;
+      btn.addEventListener('click', () => {
+        this.els.input.value = reply;
+        this.handleSend();
+      });
+      container.appendChild(btn);
+    });
+
+    container.style.display = 'flex';
+  }
+
+  showFeedback() {
+    const container = this.els.messages;
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.className = 'feedback-widget';
+
+    const label = document.createElement('div');
+    label.className = 'feedback-label';
+    label.textContent = 'How was your experience?';
+
+    const emojisDiv = document.createElement('div');
+    emojisDiv.className = 'feedback-emojis';
+
+    const emojis = [
+      { emoji: '😞', rating: 1, label: 'Bad' },
+      { emoji: '😕', rating: 2, label: 'Poor' },
+      { emoji: '😐', rating: 3, label: 'Ok' },
+      { emoji: '😊', rating: 4, label: 'Good' },
+      { emoji: '😍', rating: 5, label: 'Excellent' }
+    ];
+
+    emojis.forEach(({ emoji, rating, label: emojiLabel }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-btn';
+      btn.title = emojiLabel;
+      btn.innerHTML = emoji;
+      btn.dataset.rating = rating;
+      btn.addEventListener('click', () => this.submitFeedback(rating));
+      emojisDiv.appendChild(btn);
+    });
+
+    const skipBtn = document.createElement('button');
+    skipBtn.type = 'button';
+    skipBtn.className = 'feedback-skip-btn';
+    skipBtn.textContent = 'Skip';
+    skipBtn.addEventListener('click', () => this.closeChatNow());
+
+    feedbackDiv.appendChild(label);
+    feedbackDiv.appendChild(emojisDiv);
+    feedbackDiv.appendChild(skipBtn);
+    container.appendChild(feedbackDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  closeChatNow() {
+    this.els.panel.classList.remove('open');
+    this.closeAvatarStream();
+  }
+
+  async submitFeedback(rating) {
+    try {
+      await this.api.submitFeedback(this.sessionId, rating);
+      const feedbackWidget = this.els.messages.querySelector('.feedback-widget');
+      if (feedbackWidget) {
+        feedbackWidget.innerHTML = '<div class="feedback-thanks">Thank you for your feedback! 🙏</div>';
+      }
+      setTimeout(() => {
+        this.els.panel.classList.remove('open');
+        this.closeAvatarStream();
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
     }
   }
 }

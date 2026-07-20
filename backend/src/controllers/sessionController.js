@@ -61,4 +61,35 @@ async function validateSession(req, res, next) {
   }
 }
 
-module.exports = { createSession, validateSession };
+async function submitFeedback(req, res, next) {
+  try {
+    const { session_id, rating } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ error: 'session_id is required' });
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'rating must be between 1 and 5' });
+    }
+
+    const session = await prisma.chatBot.findUnique({
+      where: { session_id },
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    await prisma.chatBot.update({
+      where: { session_id },
+      data: { review_rating: rating },
+    });
+
+    res.json({ success: true, message: 'Feedback submitted successfully' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { createSession, validateSession, submitFeedback };

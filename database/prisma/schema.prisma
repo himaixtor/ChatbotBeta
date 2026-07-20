@@ -62,9 +62,8 @@ model ChatBot {
   // Scheduler delete targeting: focus session marker
   is_focus Boolean @default(false)
 
-  // Avatar/D-ID WebRTC stream tracking
-  did_stream_id  String?
-  did_session_id String?
+  // User feedback rating (1-5 stars)
+  review_rating Int? // 1 to 5
 
   created_at DateTime @default(now())
   expires_at DateTime

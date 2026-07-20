@@ -1,5 +1,6 @@
-import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon, DollarSign } from 'lucide-react';
+import { Activity, Languages, MessageCircle, UserRoundCheck, FileText, Link as LinkIcon, DollarSign, Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
 import LanguagePie from '../components/LanguagePie';
@@ -108,11 +109,9 @@ export default function Dashboard() {
           <LanguagePie data={data?.language_breakdown} />
         </div>
         <div className="stat-card">
-          <Languages className="stat-icon" size={22} />
-          <div className="label" style={{ marginBottom: 8 }}>
-            Users by language (unique emails)
-          </div>
-          <LanguagePie data={data?.users_by_language} />
+          <Star className="stat-icon" size={22} />
+          <div className="value">{data?.review_statistics?.avg_rating ?? '0.0'}</div>
+          <div className="label">Average Rating ({data?.review_statistics?.total_reviews ?? 0} reviews)</div>
         </div>
       </div>
       <div className="chart-card">
@@ -131,6 +130,52 @@ export default function Dashboard() {
           peakHour={data?.dashboard_cards?.avg_chat_time?.peak_hour}
         />
       </div>
+
+      {data?.recent_reviews && data.recent_reviews.length > 0 && (
+        <div className="chart-card">
+          <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>
+            <Star size={18} /> Recent Feedback
+          </h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600 }}>Name</th>
+                  <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600 }}>Email</th>
+                  <th style={{ padding: '10px', textAlign: 'center', fontWeight: 600 }}>Rating</th>
+                  <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600 }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recent_reviews.map((review) => (
+                  <tr key={review.session_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '10px' }}>{review.name || '—'}</td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>{review.email || '—'}</td>
+                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        backgroundColor: review.rating >= 4 ? '#dcfce7' : review.rating >= 3 ? '#fef3c7' : '#fee2e2',
+                        color: review.rating >= 4 ? '#166534' : review.rating >= 3 ? '#92400e' : '#991b1b',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}>
+                        {'⭐'.repeat(review.rating)} {review.rating}/5
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>
+                      {format(new Date(review.created_at), 'dd MMM yyyy')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </>
   );
 }

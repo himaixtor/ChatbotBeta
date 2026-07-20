@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // Dashboard page
 router.get('/stats', requirePermission('can_access_dashboard'), adminController.getStats);
+router.get('/active-chats-24h', requirePermission('can_access_dashboard'), adminController.getActive24hChats);
 
 // Chat History page
 router.get('/chats', requirePermission('can_view_all_chats'), adminController.listChats);

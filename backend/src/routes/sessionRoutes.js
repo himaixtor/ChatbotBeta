@@ -6,6 +6,34 @@ const router = express.Router();
 
 router.post('/create', sessionController.createSession);
 router.get('/validate/:sessionId', sessionController.validateSession);
+router.post('/feedback', sessionController.submitFeedback);
+
+// Avatar configuration endpoint (D-ID Client SDK)
+router.get('/avatar-config', (req, res) => {
+  try {
+    const didClientKey = process.env.DID_CLIENT_KEY;
+    const didAgentId = process.env.DID_AGENT_ID || 'v2_agt_hOsF1A8R';
+
+    if (!didClientKey) {
+      console.warn('[Avatar Config] DID_CLIENT_KEY not found in environment');
+      return res.status(503).json({
+        error: 'Avatar service not configured',
+        message: 'DID_CLIENT_KEY is missing from server configuration'
+      });
+    }
+
+    console.log('[Avatar Config] Returning D-ID configuration to frontend');
+    res.json({
+      clientKey: didClientKey,
+      agentId: didAgentId,
+      apiBaseUrl: process.env.DID_API_BASE_URL || 'https://api.d-id.com',
+      configured: true
+    });
+  } catch (error) {
+    console.error('[Avatar Config] Error:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve avatar configuration' });
+  }
+});
 
 // IP location endpoint (proxy for browser CORS issue)
 router.get('/ip-location', async (req, res, next) => {

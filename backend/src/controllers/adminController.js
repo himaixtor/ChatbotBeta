@@ -67,6 +67,7 @@ async function listChats(req, res, next) {
           chat_language: true,
           interested_in: true,
           lead_generated: true,
+          review_rating: true,
           created_at: true,
         },
       }),
@@ -88,7 +89,7 @@ async function listChats(req, res, next) {
 
 async function getStats(req, res, next) {
   try {
-    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang, totalDocuments, totalUrls, activeLast24h, avgChatTimeRaw] =
+    const [totalChats, leadsGenerated, languageGroups, dailyRaw, usersByLang, totalDocuments, totalUrls, activeLast24h, avgChatTimeRaw, reviewStats, recentReviews] =
       await Promise.all([
         prisma.chatBot.count(),
         prisma.chatBot.count({ where: { lead_generated: true } }),
@@ -137,6 +138,32 @@ async function getStats(req, res, next) {
           GROUP BY EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')
           ORDER BY hour ASC
         `,
+        // Review statistics
+        prisma.$queryRaw`
+          SELECT
+            COUNT(*)::int as total_reviews,
+            ROUND(AVG(review_rating)::numeric, 2)::float as avg_rating,
+            COUNT(CASE WHEN review_rating = 1 THEN 1 END)::int as rating_1,
+            COUNT(CASE WHEN review_rating = 2 THEN 1 END)::int as rating_2,
+            COUNT(CASE WHEN review_rating = 3 THEN 1 END)::int as rating_3,
+            COUNT(CASE WHEN review_rating = 4 THEN 1 END)::int as rating_4,
+            COUNT(CASE WHEN review_rating = 5 THEN 1 END)::int as rating_5
+          FROM "ChatBot"
+          WHERE review_rating IS NOT NULL
+        `,
+        // Recent reviews
+        prisma.chatBot.findMany({
+          where: { review_rating: { not: null } },
+          select: {
+            session_id: true,
+            name: true,
+            email: true,
+            review_rating: true,
+            created_at: true,
+          },
+          orderBy: { created_at: 'desc' },
+          take: 10,
+        }),
       ]);
 
     const language_breakdown = {};
@@ -172,6 +199,17 @@ async function getStats(req, res, next) {
       ? avgChatTime.reduce((max, curr) => (curr.count > max.count ? curr : max)).hour
       : null;
 
+    // Process review statistics
+    const reviewData = reviewStats[0] || { total_reviews: 0, avg_rating: 0 };
+    const isViewer = req.user?.role === 'viewer';
+    const processedReviews = recentReviews.map((review) => ({
+      session_id: review.session_id,
+      name: review.name,
+      email: isViewer && review.email ? maskEmail(review.email) : review.email,
+      rating: review.review_rating,
+      created_at: review.created_at,
+    }));
+
     res.json({
       total_chats: totalChats,
       leads_generated: leadsGenerated,
@@ -180,6 +218,18 @@ async function getStats(req, res, next) {
       language_breakdown,
       users_by_language,
       daily_stats,
+      review_statistics: {
+        total_reviews: Number(reviewData.total_reviews),
+        avg_rating: Number(reviewData.avg_rating) || 0,
+        distribution: {
+          1: Number(reviewData.rating_1),
+          2: Number(reviewData.rating_2),
+          3: Number(reviewData.rating_3),
+          4: Number(reviewData.rating_4),
+          5: Number(reviewData.rating_5),
+        },
+      },
+      recent_reviews: processedReviews,
       dashboard_cards: {
         active_chats_24h: {
           count: activeLast24h,
@@ -356,6 +406,27 @@ async function deleteSession(req, res, next) {
   }
 }
 
+async function getActive24hChats(req, res, next) {
+  try {
+    const count = await prisma.chatBot.count({
+      where: {
+        created_at: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          lte: new Date(),
+        },
+      },
+    });
+
+    res.json({
+      count,
+      label: 'Active Chats (Last 24h)',
+      period: '24 hours',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   listChats,
   getStats,
@@ -364,4 +435,5 @@ module.exports = {
   getSessionMessages,
   getMessageAttachment,
   deleteSession,
+  getActive24hChats,
 };

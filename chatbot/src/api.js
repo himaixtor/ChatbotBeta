@@ -55,5 +55,10 @@ export function createApiClient(apiEndpoint) {
       `${base}/api/chat/history/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/file`,
     getHistory: (sessionId) =>
       request(`/api/chat/history/${sessionId}`, { method: 'GET' }),
+    submitFeedback: (sessionId, rating) =>
+      request('/api/session/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId, rating }),
+      }),
   };
 }

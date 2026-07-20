@@ -18,6 +18,12 @@ export class AvatarRTC {
     this.isTalking = false;
     this.messageQueue = [];
     this.isProcessingQueue = false;
+
+    // Network state tracking
+    this.connectionAttempts = 0;
+    this.isOnRegionalEndpoint = false;
+    this.lastStreamErrorTime = 0;
+    this.lastSDKError = null;
   }
 
   /**
@@ -75,6 +81,10 @@ export class AvatarRTC {
 
         onError: (error) => {
           console.error('%c[❌ AVATAR SDK EVENT] onError -', 'color: red; font-weight: bold', error);
+          // Store error so speak() method can detect and handle it
+          this.lastSDKError = error;
+          this.lastStreamErrorTime = Date.now();
+          this.isOnRegionalEndpoint = true;
         },
       };
 
@@ -154,6 +164,10 @@ export class AvatarRTC {
       this.isTalking = true;
       console.log(`%c[🗣️ AVATAR SPEAK] Calling speak() [Attempt ${retryCount + 1}]:`, 'color: blue; font-weight: bold', text.substring(0, 60) + '...');
 
+      if (this.isOnRegionalEndpoint) {
+        console.log('%c[🗣️ AVATAR SPEAK] ⚠️ Using regional endpoint - stream may be unstable', 'color: orange');
+      }
+
       // SDK's speak method
       console.log('%c[🗣️ AVATAR SPEAK] Awaiting agentManager.speak()...', 'color: blue');
       const result = await this.agentManager.speak({
@@ -161,24 +175,49 @@ export class AvatarRTC {
         input: text,
       });
 
+      // Check if SDK error occurred during speak (async error through callback)
+      if (this.lastSDKError) {
+        console.error('%c[🗣️ AVATAR SPEAK] ❌ SDK error detected after speak():', 'color: red; font-weight: bold', this.lastSDKError);
+        const errorToThrow = this.lastSDKError;
+        this.lastSDKError = null; // Clear for next attempt
+        throw new Error(`Stream error: ${errorToThrow}`);
+      }
+
       console.log('%c[🗣️ AVATAR SPEAK] ✅ speak() completed successfully!', 'color: green; font-weight: bold');
       console.log('%c[🗣️ AVATAR SPEAK] Result:', 'color: green', result);
+
+      // Reset stream error tracking on success
+      this.lastStreamErrorTime = 0;
 
       // Wait before processing queue
       await new Promise(resolve => setTimeout(resolve, 500));
       return result;
     } catch (error) {
       console.error(`%c[🗣️ AVATAR SPEAK] ❌ Speak failed (Attempt ${retryCount + 1}):`, 'color: red; font-weight: bold', error.message);
+      console.error('%c[🗣️ AVATAR SPEAK] Full error:', 'color: red', error.toString());
 
       // Check if it's a stream error (audio issue on regional endpoint)
       const isStreamError =
         error.message?.includes('Stream') ||
         error.message?.includes('stream') ||
         error.toString()?.includes('d:') ||
-        error.toString()?.includes('We:');
+        error.toString()?.includes('We:') ||
+        error.toString()?.includes('ICE') ||
+        error.toString()?.includes('DTLS') ||
+        error.toString()?.includes('WebSocket');
 
-      if (isStreamError) {
-        console.warn('%c[🗣️ AVATAR SPEAK] ⚠️ Audio stream error detected - likely regional endpoint issue', 'color: orange; font-weight: bold');
+      const isNetworkError =
+        error.message?.includes('timeout') ||
+        error.message?.includes('network') ||
+        error.message?.includes('CORS') ||
+        error.toString()?.includes('ERR_NETWORK');
+
+      if (isStreamError || isNetworkError) {
+        this.lastStreamErrorTime = Date.now();
+        this.isOnRegionalEndpoint = true;
+        console.warn('%c[🗣️ AVATAR SPEAK] ⚠️ Stream/Network error - likely regional endpoint issue', 'color: orange; font-weight: bold');
+        console.log('%c[🗣️ AVATAR SPEAK] Error classification:', 'color: orange',
+          isStreamError ? 'STREAM_ERROR' : 'NETWORK_ERROR');
 
         // Aggressive retry strategy for stream errors
         if (retryCount === 0) {
@@ -204,6 +243,8 @@ export class AvatarRTC {
         } else if (retryCount >= 4) {
           console.error('%c[🗣️ AVATAR SPEAK] ❌ ALL RETRIES EXHAUSTED (5 attempts)', 'color: red; font-weight: bold');
           console.error('%c[🗣️ AVATAR SPEAK] This appears to be a persistent audio/stream issue', 'color: red');
+          console.error('%c[🗣️ AVATAR SPEAK] RECOMMENDATION: Check network connectivity to D-ID servers', 'color: red; font-weight: bold');
+          console.error('%c[🗣️ AVATAR SPEAK] Your server may not have stable access to USA-based LiveKit endpoints', 'color: red; font-weight: bold');
           return null;
         }
       }
@@ -279,5 +320,41 @@ export class AvatarRTC {
       console.error('%c[🔌 AVATAR DISCONNECT] ❌ Disconnect error:', 'color: red; font-weight: bold', error.message);
       this.isConnected = false;
     }
+  }
+
+  /**
+   * Diagnostic method to check network connectivity
+   */
+  async diagnoseNetwork() {
+    console.log('%c[🔍 NETWORK DIAGNOSTIC] Starting network check...', 'color: purple; font-weight: bold');
+
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      isConnected: this.isConnected,
+      isOnRegionalEndpoint: this.isOnRegionalEndpoint,
+      connectionAttempts: this.connectionAttempts,
+      lastStreamError: this.lastStreamErrorTime ? new Date(this.lastStreamErrorTime).toISOString() : null,
+    };
+
+    try {
+      const res = await fetch('https://api.d-id.com/ping', { method: 'HEAD', mode: 'no-cors' });
+      diagnostics.canReachDID = true;
+      console.log('%c[🔍 NETWORK DIAGNOSTIC] ✅ Can reach D-ID API', 'color: green');
+    } catch (e) {
+      diagnostics.canReachDID = false;
+      console.warn('%c[🔍 NETWORK DIAGNOSTIC] ❌ Cannot reach D-ID API:', 'color: red', e.message);
+    }
+
+    try {
+      const res = await fetch('https://stun.l.google.com/', { method: 'HEAD', mode: 'no-cors' });
+      diagnostics.canReachSTUN = true;
+      console.log('%c[🔍 NETWORK DIAGNOSTIC] ✅ Can reach STUN server', 'color: green');
+    } catch (e) {
+      diagnostics.canReachSTUN = false;
+      console.warn('%c[🔍 NETWORK DIAGNOSTIC] ❌ Cannot reach STUN server:', 'color: red', e.message);
+    }
+
+    console.log('%c[🔍 NETWORK DIAGNOSTIC] Results:', 'color: purple', diagnostics);
+    return diagnostics;
   }
 }
