@@ -17,16 +17,12 @@ const LANG_COLORS = {
   Gujarati: '#fed7aa',
 };
 
-function canDownload(role) {
-  return role === 'admin' || role === 'manager';
-}
-
 function hasDownloadAccess(user) {
-  return user?.permissions?.can_download || canDownload(user?.role);
+  return !!user?.permissions?.can_download;
 }
 
-function canDelete(role) {
-  return role === 'admin';
+function hasDeleteAccess(user) {
+  return !!user?.permissions?.can_manage_users;
 }
 
 export default function Chats() {
@@ -197,6 +193,7 @@ export default function Chats() {
               <th>Language</th>
               <th>Interested In</th>
               <th>Lead</th>
+              <th>Reviews</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -205,7 +202,7 @@ export default function Chats() {
             {isLoading && <LoadingSkeleton />}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="empty-state">
+                <td colSpan={9} className="empty-state">
                   No chat sessions found
                 </td>
               </tr>
@@ -273,6 +270,25 @@ export default function Chats() {
                       {row.lead_generated ? 'Yes' : 'No'}
                     </span>
                   </td>
+                  <td>
+                    {row.review_rating ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        backgroundColor: row.review_rating >= 4 ? '#dcfce7' : row.review_rating >= 3 ? '#fef3c7' : '#fee2e2',
+                        color: row.review_rating >= 4 ? '#166534' : row.review_rating >= 3 ? '#92400e' : '#991b1b',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}>
+                        {'⭐'.repeat(row.review_rating)} {row.review_rating}/5
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td>{format(new Date(row.created_at), 'dd MMM yyyy, HH:mm')}</td>
                   <td>
                     <button
@@ -293,7 +309,7 @@ export default function Chats() {
                         <Download size={18} />
                       </button>
                     )}
-                    {canDelete(user?.role) && (
+                    {hasDeleteAccess(user) && (
                       <button
                         type="button"
                         className="btn-icon"

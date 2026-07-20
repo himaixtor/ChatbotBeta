@@ -1,22 +1,26 @@
 const express = require('express');
 const adminController = require('../controllers/adminController');
 const authenticate = require('../middleware/authenticate');
-const { requireRole, requirePermission } = require('../middleware/requireRole');
+const { requirePermission } = require('../middleware/requireRole');
 
 const router = express.Router();
 
 router.use(authenticate);
-router.use(requirePermission('can_view_all_chats'));
 
+// Dashboard page
+router.get('/stats', requirePermission('can_access_dashboard'), adminController.getStats);
+router.get('/active-chats-24h', requirePermission('can_access_dashboard'), adminController.getActive24hChats);
 
-router.get('/chats', adminController.listChats);
-router.get('/stats', adminController.getStats);
+// Chat History page
+router.get('/chats', requirePermission('can_view_all_chats'), adminController.listChats);
 router.get(
   '/chats/:sessionId/messages',
+  requirePermission('can_view_all_chats'),
   adminController.getSessionMessages
 );
 router.get(
   '/chats/:sessionId/messages/:messageId/file',
+  requirePermission('can_view_all_chats'),
   adminController.getMessageAttachment
 );
 
@@ -31,9 +35,10 @@ router.get(
   adminController.exportAll
 );
 
+// Chat deletion is an administrative action — tied to the user-management permission
 router.delete(
   '/chats/:sessionId',
-  requireRole('admin'),
+  requirePermission('can_manage_users'),
   adminController.deleteSession
 );
 

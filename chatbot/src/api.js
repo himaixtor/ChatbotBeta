@@ -20,6 +20,12 @@ export function createApiClient(apiEndpoint) {
   }
 
   return {
+    // Generic methods for custom endpoints
+    post: (path, body) =>
+      request(path, { method: 'POST', body: JSON.stringify(body) }),
+    get: (path) => request(path, { method: 'GET' }),
+
+    // Chat endpoints
     createSession: () => request('/api/session/create', { method: 'POST' }),
     validateSession: (sessionId) =>
       request(`/api/session/validate/${sessionId}`, { method: 'GET' }),
@@ -49,5 +55,10 @@ export function createApiClient(apiEndpoint) {
       `${base}/api/chat/history/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/file`,
     getHistory: (sessionId) =>
       request(`/api/chat/history/${sessionId}`, { method: 'GET' }),
+    submitFeedback: (sessionId, rating) =>
+      request('/api/session/feedback', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId, rating }),
+      }),
   };
 }

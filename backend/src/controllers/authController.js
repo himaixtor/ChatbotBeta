@@ -1,6 +1,7 @@
 /**
  * Authentication: register, login, refresh, logout.
  */
+const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const prisma = require('../utils/prisma');
 const {
@@ -10,10 +11,39 @@ const {
   hashToken,
 } = require('../utils/jwt');
 const { isValidEmail, requireFields } = require('../utils/validators');
+const { PERMISSION_FIELDS } = require('../utils/permissions');
 
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_MINUTES = 15;
 const BCRYPT_ROUNDS = 12;
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
+const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify';
+
+async function verifyCaptcha(captchaToken) {
+  try {
+    const response = await axios.post(RECAPTCHA_VERIFY_URL, null, {
+      params: {
+        secret: RECAPTCHA_SECRET_KEY,
+        response: captchaToken,
+      },
+    });
+
+    const { success, score } = response.data;
+
+    if (!success) {
+      return { valid: false, error: 'CAPTCHA verification failed' };
+    }
+
+    if (score < 0.5) {
+      return { valid: false, error: 'CAPTCHA score too low, please try again' };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('[auth/captcha] Verification error:', error.message);
+    return { valid: false, error: 'CAPTCHA verification service error' };
+  }
+}
 
 function setTokenCookies(res, accessToken, refreshToken) {
   const isProd = process.env.NODE_ENV === 'production';
@@ -32,11 +62,11 @@ function setTokenCookies(res, accessToken, refreshToken) {
 async function getUserPermissions(roleName) {
   const role = await prisma.role.findUnique({ where: { role_name: roleName } });
   if (!role) return null;
-  return {
-    can_view_all_chats: role.can_view_all_chats,
-    can_download: role.can_download,
-    can_manage_users: role.can_manage_users,
-  };
+  const permissions = {};
+  for (const field of PERMISSION_FIELDS) {
+    permissions[field] = !!role[field];
+  }
+  return permissions;
 }
 
 async function register(req, res, next) {
@@ -83,10 +113,21 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { email, password, captchaToken } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
+
+    // TODO: Uncomment CAPTCHA verification when ready to enable
+    // if (!captchaToken) {
+    //   return res.status(400).json({ captchaError: 'CAPTCHA token required' });
+    // }
+
+    // Verify CAPTCHA first
+    // const captchaResult = await verifyCaptcha(captchaToken);
+    // if (!captchaResult.valid) {
+    //   return res.status(400).json({ captchaError: captchaResult.error });
+    // }
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },

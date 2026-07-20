@@ -9,22 +9,48 @@ const prisma = new PrismaClient();
 
 const ROLES = [
   {
+    role_name: 'super_admin',
+    can_view_all_chats: true,
+    can_download: true,
+    can_manage_users: true,
+    can_access_dashboard: true,
+    can_access_train_ai: true,
+    can_access_token_usage: true,
+    can_access_scheduler: true,
+    can_access_license_management: true,
+  },
+  {
     role_name: 'admin',
     can_view_all_chats: true,
     can_download: true,
     can_manage_users: true,
+    can_access_dashboard: true,
+    can_access_train_ai: false,
+    can_access_token_usage: true,
+    can_access_scheduler: true,
+    can_access_license_management: false,
   },
   {
     role_name: 'manager',
     can_view_all_chats: true,
     can_download: true,
     can_manage_users: false,
+    can_access_dashboard: true,
+    can_access_train_ai: false,
+    can_access_token_usage: false,
+    can_access_scheduler: false,
+    can_access_license_management: false,
   },
   {
     role_name: 'viewer',
     can_view_all_chats: true,
     can_download: false,
     can_manage_users: false,
+    can_access_dashboard: true,
+    can_access_train_ai: false,
+    can_access_token_usage: false,
+    can_access_scheduler: false,
+    can_access_license_management: false,
   },
 ];
 

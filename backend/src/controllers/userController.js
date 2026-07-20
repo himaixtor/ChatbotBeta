@@ -28,7 +28,13 @@ async function assertRoleExists(role) {
 
 async function listUsers(req, res, next) {
   try {
+    // Non-super-admins can only see users who are not super_admin
+    const whereClause = req.user?.role === 'super_admin'
+      ? {}
+      : { role: { not: 'super_admin' } };
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       orderBy: { created_at: 'desc' },
       select: userSelect,
     });
@@ -63,6 +69,42 @@ async function createUser(req, res, next) {
     }
     if (!(await assertRoleExists(role))) {
       return res.status(400).json({ error: 'Invalid role' });
+    }
+    // Only super_admin can assign admin or super_admin roles
+    if ((role === 'super_admin' || role === 'admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can assign admin or super_admin roles' });
+    }
+
+    // Check license limits
+    const LicenseService = require('../services/licenseService');
+    const licenseStatus = await LicenseService.getLicenseStatus();
+
+    if (licenseStatus.max_users !== undefined) {
+      // Count total users (excluding super_admin)
+      const totalUsers = await prisma.user.count({
+        where: { role: { not: 'super_admin' } }
+      });
+
+      if (totalUsers >= licenseStatus.max_users) {
+        return res.status(403).json({
+          error: 'User limit reached',
+          message: `Maximum users allowed: ${licenseStatus.max_users}. Current: ${totalUsers}`
+        });
+      }
+    }
+
+    if (licenseStatus.max_admin_users !== undefined && (role === 'admin' || role === 'Admin')) {
+      // Count total admin users
+      const adminCount = await prisma.user.count({
+        where: { role: { in: ['admin', 'Admin'] } }
+      });
+
+      if (adminCount >= licenseStatus.max_admin_users) {
+        return res.status(403).json({
+          error: 'Admin user limit reached',
+          message: `Maximum admin users allowed: ${licenseStatus.max_admin_users}. Current: ${adminCount}`
+        });
+      }
     }
 
     const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
@@ -100,6 +142,10 @@ async function updateUser(req, res, next) {
     }
     if (role !== undefined && !(await assertRoleExists(role))) {
       return res.status(400).json({ error: 'Invalid role' });
+    }
+    // Only super_admin can assign/update to admin or super_admin roles
+    if ((role === 'super_admin' || role === 'admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can assign admin or super_admin roles' });
     }
     if (uid === req.user.uid && is_active === false) {
       return res.status(400).json({ error: 'You cannot deactivate your own account' });

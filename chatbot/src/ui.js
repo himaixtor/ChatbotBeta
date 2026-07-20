@@ -7,17 +7,33 @@ export function createUI(shadow, config) {
   root.className = `widget-root pos-${config.position === 'bottom-left' ? 'bl' : 'br'}`;
 
   root.innerHTML = `
+    <!-- Avatar Section (shown only in video mode) -->
+    <div class="avatar-section" id="avatar-section" style="display:none"></div>
     <div class="panel" id="panel">
+      <div class="weather-particles" id="weather-particles"></div>
       <div class="panel-header">
         <span class="bot-avatar">A</span>
         <span id="bot-title"></span>
         <button type="button" class="close-btn" id="close-btn" aria-label="Close">×</button>
       </div>
+      <div class="tab-bar" id="tab-bar">
+        <button type="button" class="tab-btn active" id="text-tab" data-mode="text">💬 Text</button>
+        <button type="button" class="tab-btn" id="video-tab" data-mode="video">🎥 Video</button>
+      </div>
+      
       <div class="error-banner" id="error-banner" style="display:none">
         <span id="error-text"></span>
         <button type="button" class="retry-btn" id="retry-btn">Retry</button>
       </div>
+
+      
+
+      <!-- Messages Container -->
       <div class="messages" id="messages"></div>
+
+      <!-- Quick Replies Container -->
+      <div class="quick-replies" id="quick-replies" style="display:none;"></div>
+
       <div class="input-area">
         <textarea id="input" rows="2" maxlength="500" placeholder="Type a message..."></textarea>
         <button type="button" class="send-btn" id="send-btn">Send</button>
@@ -35,12 +51,18 @@ export function createUI(shadow, config) {
     bubble: shadow.getElementById('bubble'),
     closeBtn: shadow.getElementById('close-btn'),
     messages: shadow.getElementById('messages'),
+    quickReplies: shadow.getElementById('quick-replies'),
     input: shadow.getElementById('input'),
     sendBtn: shadow.getElementById('send-btn'),
     errorBanner: shadow.getElementById('error-banner'),
     errorText: shadow.getElementById('error-text'),
     retryBtn: shadow.getElementById('retry-btn'),
     botTitle: shadow.getElementById('bot-title'),
+    tabBar: shadow.getElementById('tab-bar'),
+    textTab: shadow.getElementById('text-tab'),
+    videoTab: shadow.getElementById('video-tab'),
+    avatarSection: shadow.getElementById('avatar-section'),
+    weatherParticles: shadow.getElementById('weather-particles'),
   };
 
   els.botTitle.textContent = config.botName;

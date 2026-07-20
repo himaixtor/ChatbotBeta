@@ -16,7 +16,14 @@ const adminRoutes = require('./routes/adminRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const userRoutes = require('./routes/userRoutes');
 const schedulerRoutes = require('./routes/schedulerRoutes');
+const trainChatbotRoutes = require('./routes/trainChatbotRoutes');
+const trainChatbotUrlRoutes = require('./routes/trainChatbotUrlRoutes');
+const avatarRoutes = require('./routes/avatarRoutes');
+const weatherRoutes = require('./routes/weatherRoutes');
+const licenseRoutes = require('./routes/licenseRoutes');
 const { startSchedulerRunner } = require('./services/schedulerRunner');
+const LicenseService = require('./services/licenseService');
+const { licenseValidator } = require('./middleware/licenseValidator');
 
 
 const app = express();
@@ -100,24 +107,48 @@ app.use(cors(corsOptionsDelegate));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
+// Initialize license system
+LicenseService.initializeLicenseDir();
+
+// License validator middleware - runs on all requests
+app.use(licenseValidator);
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/license', licenseRoutes);
 app.use('/api/session', sessionRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/scheduler', schedulerRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/train-chatbot', trainChatbotRoutes);
+app.use('/api/train-chatbot-url', trainChatbotUrlRoutes);
+app.use('/api/avatar', avatarRoutes);
+app.use('/api/weather', weatherRoutes);
 
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   log(`Server running on http://172.16.1.67:${PORT}`);
   log(`LAN access available at http://172.16.1.67:${PORT}`);
+
+  // Validate license on startup
+  log('[License] Validating license on startup...');
+  const licenseValidation = await LicenseService.validateLicenseStartup();
+  if (licenseValidation.valid) {
+    log(`[License] ✓ License is valid and active`);
+  } else {
+    log(`[License] ⚠ License status: ${licenseValidation.reason}`);
+    if (licenseValidation.requiresActivation) {
+      log('[License] → Entering License Activation Mode');
+    }
+  }
+
   // start scheduler after server boot
   startSchedulerRunner();
 });
