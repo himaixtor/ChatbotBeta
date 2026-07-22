@@ -247,3 +247,20 @@ model License {
   @@index([created_by])
   @@index([created_timestamp])
 }
+
+model TokenUsage {
+  id                String   @id @default(uuid())
+  session_id        String?
+  call_type         String                   // "llm" | "embedding"
+  vendor            String
+  model             String
+  prompt_tokens     Int      @default(0)
+  completion_tokens Int      @default(0)
+  total_tokens      Int      @default(0)
+  cost_usd          Float    @default(0.0)
+  created_at        DateTime @default(now())
+
+  @@index([created_at])
+  @@index([vendor, model])
+  @@index([session_id])
+}

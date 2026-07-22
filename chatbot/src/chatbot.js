@@ -75,8 +75,8 @@ class ChatbotWidgetClass {
       primaryColor: config.primaryColor || '#008C89',
       position: config.position || 'bottom-right',
       // D-ID SDK configuration (will be fetched from backend)
-      didClientKey: config.didClientKey || null,
-      didAgentId: config.didAgentId || 'v2_agt_hOsF1A8R',
+      didClientKey: config.didClientKey || 'ck_k-4TlZBe0ltKyhI6MYIG7',
+      didAgentId: config.didAgentId || 'v2_agt_qlftkgx6',
     };
 
     this.api = createApiClient(this.config.apiEndpoint);

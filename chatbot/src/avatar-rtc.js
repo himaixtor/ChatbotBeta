@@ -6,11 +6,36 @@
 
 import { createAgentManager } from '@d-id/client-sdk';
 
+// Intercept fetch to proxy D-ID API calls through backend to avoid CORS
+const originalFetch = window.fetch;
+window.fetch = function(url, options) {
+  // Route D-ID API calls through backend proxy
+  if (typeof url === 'string' && url.includes('api.d-id.com')) {
+    console.log(`%c[🔌 FETCH PROXY] Routing D-ID request through backend: ${url}`, 'color: cyan');
+
+    // Extract the path from D-ID API URL
+    const didUrl = new URL(url);
+    const didPath = didUrl.pathname + didUrl.search; // /agents/v2_agt_xxx
+
+    // Get backend URL from config or window
+    const backendUrl = window.__chatbotBackendUrl || 'http://localhost:5000';
+    const proxyUrl = `${backendUrl}/api/session/proxy/did${didPath}`;
+
+    console.log(`%c[🔌 FETCH PROXY] Proxied URL: ${proxyUrl}`, 'color: cyan');
+
+    // Forward all headers
+    return originalFetch(proxyUrl, options);
+  }
+
+  // All other requests use original fetch
+  return originalFetch(url, options);
+};
+
 export class AvatarRTC {
   constructor(config) {
     this.sessionId = config.sessionId;
-    this.agentId = config.agentId || 'v2_agt_hOsF1A8R';
-    this.clientKey = config.clientKey;
+    this.agentId = config.agentId || 'v2_agt_qlftkgx6';
+    this.clientKey = config.clientKey || 'ck_k-4TlZBe0ltKyhI6MYIG7';
     this.videoElement = config.videoElement;
 
     this.agentManager = null;
